@@ -26,6 +26,10 @@ public class InterfazFinanciera extends JFrame {
     private JSpinner spnFechaMeta;
     private JTable tablaMetas;
     private DefaultTableModel modeloTablaMetas;
+    // Nuevos componentes para contribuir a metas
+    private JComboBox<String> cmbMetasContribucion;
+    private JTextField txtMontoContribucion;
+    // El botón btnContribuirAMeta se puede declarar aquí o localmente en crearPanelMetas()
 
     private JTextField txtNombrePresupuesto, txtCategoriaPresupuesto, txtLimitePresupuesto;
     private JSpinner spnMesPresupuesto, spnAñoPresupuesto;
@@ -124,15 +128,38 @@ public class InterfazFinanciera extends JFrame {
         btnCrearMeta.addActionListener(e -> crearMeta());
         gbc.gridx = 1; gbc.gridy = 4; panelEntrada.add(btnCrearMeta, gbc);
 
+        // Panel para contribuir a meta
+        JPanel panelContribucion = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panelContribucion.setBorder(BorderFactory.createTitledBorder("Contribuir a Meta Existente"));
+
+        panelContribucion.add(new JLabel("Seleccionar Meta:"));
+        cmbMetasContribucion = new JComboBox<>();
+        // cmbMetasContribucion será poblado por actualizarComboBoxMetas()
+        panelContribucion.add(cmbMetasContribucion);
+
+        panelContribucion.add(new JLabel("Monto a Contribuir:"));
+        txtMontoContribucion = new JTextField(10);
+        panelContribucion.add(txtMontoContribucion);
+
+        JButton btnContribuirAMeta = new JButton("Contribuir");
+        btnContribuirAMeta.addActionListener(e -> contribuirAMetaSeleccionada());
+        panelContribucion.add(btnContribuirAMeta);
+
+        // Layout general del panel de metas
+        // El panel de entrada para nueva meta y el panel de contribución irán en un panel superior.
+        JPanel panelSuperiorMetas = new JPanel(new BorderLayout());
+        panelSuperiorMetas.add(panelEntrada, BorderLayout.NORTH); // Panel para crear nueva meta
+        panelSuperiorMetas.add(panelContribucion, BorderLayout.SOUTH); // Panel para contribuir
+
         String[] columnasMetas = {"Nombre", "Objetivo", "Actual", "Progreso", "Fecha Límite"};
         modeloTablaMetas = new DefaultTableModel(columnasMetas, 0);
         tablaMetas = new JTable(modeloTablaMetas);
         JScrollPane scrollMetas = new JScrollPane(tablaMetas);
         scrollMetas.setBorder(BorderFactory.createTitledBorder("Metas Financieras"));
 
-        panel.add(panelEntrada, BorderLayout.NORTH);
-        panel.add(scrollMetas, BorderLayout.CENTER);
-        LOGGER.fine("Panel de Metas creado.");
+        panel.add(panelSuperiorMetas, BorderLayout.NORTH); // Panel superior con ambos sub-paneles
+        panel.add(scrollMetas, BorderLayout.CENTER); // Tabla de metas abajo
+        LOGGER.fine("Panel de Metas creado con sección de contribución.");
         return panel;
     }
 
@@ -234,8 +261,11 @@ public class InterfazFinanciera extends JFrame {
         setSize(900, 700);
         setLocationRelativeTo(null);
         LOGGER.info("Actualizando tablas y resumen iniciales...");
-        actualizarTablas();
+        actualizarTablas(); // Esto ya llama a actualizarComboBoxMetas()
         actualizarResumen();
+        // No es necesario llamar a actualizarComboBoxMetas() directamente aquí si actualizarTablas() ya lo hace.
+        // Pero si queremos una carga explícita e independiente al inicio:
+        // actualizarComboBoxMetas();
         LOGGER.info("Ventana principal configurada.");
     }
 
@@ -287,6 +317,97 @@ public class InterfazFinanciera extends JFrame {
         }
     }
 
+    private void actualizarComboBoxMetas() {
+        LOGGER.fine("Actualizando ComboBox de metas para contribución...");
+        if (cmbMetasContribucion == null) {
+            LOGGER.warning("cmbMetasContribucion es null, no se puede actualizar.");
+            return;
+        }
+        try {
+            cmbMetasContribucion.removeAllItems(); // Limpiar ítems existentes
+            LOGGER.finer("Llamando a fachada: obtenerMetasEnProgreso");
+            List<MetaFinanciera> metasEnProgreso = sistema.obtenerMetasEnProgreso();
+
+            if (metasEnProgreso != null && !metasEnProgreso.isEmpty()) {
+                LOGGER.finer("Fachada devolvió " + metasEnProgreso.size() + " metas en progreso.");
+                for (MetaFinanciera meta : metasEnProgreso) {
+                    cmbMetasContribucion.addItem(meta.getNombre());
+                }
+                cmbMetasContribucion.setEnabled(true);
+                // Habilitar también el campo de monto y el botón de contribuir si estaban deshabilitados
+                if (txtMontoContribucion != null) txtMontoContribucion.setEnabled(true);
+                // Suponiendo que btnContribuirAMeta es accesible o se maneja su estado donde se crea
+            } else {
+                LOGGER.info("No hay metas en progreso para mostrar en el ComboBox de contribución.");
+                cmbMetasContribucion.addItem("No hay metas para contribuir");
+                cmbMetasContribucion.setEnabled(false);
+                if (txtMontoContribucion != null) txtMontoContribucion.setEnabled(false);
+            }
+            LOGGER.fine("ComboBox de metas para contribución actualizado.");
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error al actualizar ComboBox de metas para contribución.", e);
+            JOptionPane.showMessageDialog(this, "Error al cargar lista de metas para contribución: " + e.getMessage(), "Error de Carga", JOptionPane.ERROR_MESSAGE);
+            if (cmbMetasContribucion != null) {
+                cmbMetasContribucion.removeAllItems();
+                cmbMetasContribucion.addItem("Error al cargar metas");
+                cmbMetasContribucion.setEnabled(false);
+            }
+            if (txtMontoContribucion != null) txtMontoContribucion.setEnabled(false);
+        }
+    }
+
+    private void contribuirAMetaSeleccionada() {
+        LOGGER.info("Evento: contribuirAMetaSeleccionada iniciado.");
+        try {
+            Object itemSeleccionado = cmbMetasContribucion.getSelectedItem();
+            if (itemSeleccionado == null || itemSeleccionado.toString().equals("No hay metas para contribuir") || itemSeleccionado.toString().isEmpty()) {
+                LOGGER.warning("No se seleccionó una meta válida para contribuir.");
+                JOptionPane.showMessageDialog(this, "Por favor, seleccione una meta válida de la lista.", "Meta no Seleccionada", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            String nombreMeta = itemSeleccionado.toString();
+
+            String montoStr = txtMontoContribucion.getText().trim();
+            LOGGER.fine("Datos leídos: Meta=''" + nombreMeta + "'', Monto Contribución=''" + montoStr + "''");
+
+            if (montoStr.isEmpty()) {
+                LOGGER.warning("Monto de contribución vacío.");
+                JOptionPane.showMessageDialog(this, "Por favor, ingrese un monto a contribuir.", "Monto Vacío", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            double montoContribucion = Double.parseDouble(montoStr);
+            if (montoContribucion <= 0) {
+                LOGGER.warning("Monto de contribución no positivo: " + montoContribucion);
+                JOptionPane.showMessageDialog(this, "El monto a contribuir debe ser positivo.", "Monto Inválido", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            LOGGER.fine("Monto de contribución parseado: " + montoContribucion);
+
+            LOGGER.info("Llamando a fachada para contribuir a meta...");
+            boolean exito = sistema.contribuirAMeta(nombreMeta, montoContribucion);
+            LOGGER.info("Resultado de fachada para contribuir a meta: " + exito);
+
+            if (exito) {
+                txtMontoContribucion.setText("");
+                actualizarTablaMetas();
+                // actualizarComboBoxMetas(); // Se actualiza para reflejar posible cambio de estado de la meta (ej. completada)
+                JOptionPane.showMessageDialog(this, "Contribución de " + String.format("$%.2f", montoContribucion) + " a la meta '" + nombreMeta + "' realizada exitosamente.");
+                LOGGER.info("Contribución realizada y UI actualizada.");
+            } else {
+                JOptionPane.showMessageDialog(this, "Error al realizar la contribución a la meta '" + nombreMeta + "'. Verifique los datos o consulte la consola.", "Error de Operación", JOptionPane.ERROR_MESSAGE);
+                LOGGER.warning("Contribución a meta fallida según la fachada.");
+            }
+
+        } catch (NumberFormatException e) {
+            LOGGER.log(Level.WARNING, "Error de formato de número al contribuir a meta.", e);
+            JOptionPane.showMessageDialog(this, "El monto a contribuir debe ser un número válido.", "Error de Formato", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error inesperado al contribuir a meta.", e);
+            JOptionPane.showMessageDialog(this, "Ocurrió un error inesperado: " + e.getMessage(), "Error Inesperado", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     private void crearMeta() {
         LOGGER.info("Evento: crearMeta iniciado.");
         try {
@@ -314,9 +435,10 @@ public class InterfazFinanciera extends JFrame {
                 txtNombreMeta.setText("");
                 txtMontoMeta.setText("");
                 txtDescripcionMeta.setText("");
-                actualizarTablaMetas();
+                actualizarTablaMetas(); // Refresca la tabla de metas
+                actualizarComboBoxMetas(); // Refresca el ComboBox con la nueva meta
                 JOptionPane.showMessageDialog(this, "Meta creada exitosamente.");
-                LOGGER.info("Meta creada y UI actualizada.");
+                LOGGER.info("Meta creada y UI actualizada, ComboBox de metas actualizado.");
             } else {
                 JOptionPane.showMessageDialog(this, "Error al crear la meta. Verifique los datos o consulte la consola.", "Error de Operación", JOptionPane.ERROR_MESSAGE);
                 LOGGER.warning("Creación de meta fallida según la fachada.");
@@ -409,6 +531,9 @@ public class InterfazFinanciera extends JFrame {
         actualizarTablaTransacciones();
         actualizarTablaMetas();
         actualizarTablaPresupuestos();
+        // Es buena idea actualizar el ComboBox de metas aquí también,
+        // por si una meta se completa y debe desaparecer de la lista de contribución.
+        actualizarComboBoxMetas();
         LOGGER.info("Todas las tablas actualizadas (o intento realizado).");
     }
 
