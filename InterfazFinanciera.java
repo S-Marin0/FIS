@@ -346,8 +346,6 @@ public class InterfazFinanciera extends JFrame {
                 return;
             }
             
-            sistema.agregarCategoriaAPresupuesto(nombrePresupuesto, categoria, limite);
-            
             txtCategoriaPresupuesto.setText("");
             txtLimitePresupuesto.setText("");
             
