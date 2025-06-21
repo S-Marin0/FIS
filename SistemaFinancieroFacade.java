@@ -134,17 +134,15 @@ public class SistemaFinancieroFacade {
     public boolean crearPresupuesto(String nombre, int mes, int año) {
         LOGGER.log(Level.INFO, "Facade: Crear Presupuesto - Nombre: {0}, Mes: {1}, Año: {2}", new Object[]{nombre, mes, año});
         Presupuesto presupuesto = new Presupuesto(nombre, mes, año);
-        // GestorPresupuestos.agregarPresupuesto no devuelve boolean y maneja la SQLException internamente.
-        // Para consistencia, debería devolver boolean o propagar la excepción.
-        // Por ahora, asumimos que si no lanza excepción explícita aquí, la UI lo tomará como éxito.
-        try {
-            gestorPresupuestos.agregarPresupuesto(presupuesto);
-            LOGGER.info("Facade: Presupuesto pasado a GestorPresupuestos.");
-            return true;
-        } catch (Exception e) { // Captura genérica por si el gestor lanzara algo inesperado
-            LOGGER.log(Level.SEVERE, "Facade: Error inesperado al crear presupuesto", e);
-            return false;
+        // GestorPresupuestos.agregarPresupuesto ahora devuelve boolean.
+        boolean exito = gestorPresupuestos.agregarPresupuesto(presupuesto);
+        if (exito) {
+            LOGGER.info("Facade: Presupuesto pasado a GestorPresupuestos y procesado con éxito.");
+        } else {
+            LOGGER.warning("Facade: GestorPresupuestos reportó un fallo al agregar presupuesto.");
+            // El error específico (SQLException) ya fue logueado por el Gestor y el DAO.
         }
+        return exito;
     }
 
     public List<Presupuesto> obtenerPresupuestos() {
@@ -170,20 +168,22 @@ public class SistemaFinancieroFacade {
         }
     }
 
-    public boolean agregarCategoriaAPresupuesto(String nombrePresupuesto, String categoria, double limite) {
-        LOGGER.log(Level.INFO, "Facade: Agregar Categoría ''{0}'' a Presupuesto ''{1}'' con Límite: {2}", new Object[]{categoria, nombrePresupuesto, limite});
+    public boolean agregarCategoriaAPresupuesto(String nombrePresupuesto, int mes, int año, String categoria, double limite) {
+        LOGGER.log(Level.INFO, "Facade: Agregar Categoría ''{0}'' a Presupuesto ''{1}'' ({2}/{3}) con Límite: {4}",
+                   new Object[]{categoria, nombrePresupuesto, mes, año, limite});
         try {
-            gestorPresupuestos.agregarCategoria(nombrePresupuesto, categoria, limite);
+            // Pasar mes y año al gestor
+            gestorPresupuestos.agregarCategoria(nombrePresupuesto, mes, año, categoria, limite);
             LOGGER.info("Facade: Solicitud de agregar categoría pasada a GestorPresupuestos y procesada con éxito.");
             return true;
         } catch (IllegalArgumentException e) {
              LOGGER.log(Level.WARNING, "Facade: Argumento inválido al agregar categoría a presupuesto.", e);
             return false;
         } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Facade: Error SQL al agregar categoría ''" + categoria + "'' a presupuesto ''" + nombrePresupuesto + "''.", e);
+            LOGGER.log(Level.SEVERE, "Facade: Error SQL al agregar categoría ''" + categoria + "'' a presupuesto ''" + nombrePresupuesto + "'' ("+mes+"/"+año+").", e);
             return false;
         } catch (Exception e) { // Captura genérica para otros errores
-            LOGGER.log(Level.SEVERE, "Facade: Error inesperado al agregar categoría a presupuesto.", e);
+            LOGGER.log(Level.SEVERE, "Facade: Error inesperado al agregar categoría ("+categoria+") a presupuesto ("+nombrePresupuesto+ " " + mes+"/"+año+").", e);
             return false;
         }
     }

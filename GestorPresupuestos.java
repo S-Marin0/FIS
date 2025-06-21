@@ -17,19 +17,21 @@ public class GestorPresupuestos {
         LOGGER.info("GestorPresupuestos inicializado con PresupuestoDAO.");
     }
 
-    public void agregarPresupuesto(Presupuesto presupuesto) {
+    public boolean agregarPresupuesto(Presupuesto presupuesto) {
         LOGGER.log(Level.INFO, "Gestor: Intentando agregar presupuesto: {0}", presupuesto != null ? presupuesto.getNombre() : "null");
         if (presupuesto == null) {
             LOGGER.warning("Gestor: Intento de agregar un presupuesto null.");
-            return; // O lanzar IllegalArgumentException
+            return false;
         }
         try {
             presupuestoDAO.insertarPresupuesto(presupuesto);
-            LOGGER.log(Level.INFO, "Gestor: Presupuesto {0} pasado a DAO para inserción.", presupuesto.getNombre());
+            LOGGER.log(Level.INFO, "Gestor: Presupuesto {0} pasado a DAO para inserción y procesado con éxito.", presupuesto.getNombre());
+            return true;
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Gestor: Error SQL al agregar presupuesto " + presupuesto.getNombre(), e);
-            // Considerar relanzar como una excepción de servicio personalizada
-            // throw new ServicioException("Error al agregar presupuesto", e);
+            // No relanzamos la excepción aquí para que la fachada pueda manejar el booleano,
+            // pero el error ya está logueado por el DAO y aquí.
+            return false;
         }
     }
 
@@ -75,19 +77,22 @@ public class GestorPresupuestos {
         }
     }
 
-    public void agregarCategoria(String nombrePresupuesto, String categoria, double limiteMonto) throws SQLException {
-        LOGGER.log(Level.INFO, "Gestor: Intentando agregar categoría ''{0}'' al presupuesto ''{1}'' con límite {2}", new Object[]{categoria, nombrePresupuesto, limiteMonto});
+    public void agregarCategoria(String nombrePresupuesto, int mes, int año, String categoria, double limiteMonto) throws SQLException {
+        LOGGER.log(Level.INFO, "Gestor: Intentando agregar categoría ''{0}'' al presupuesto ''{1}'' ({2}/{3}) con límite {4}",
+                   new Object[]{categoria, nombrePresupuesto, mes, año, limiteMonto});
         if (nombrePresupuesto == null || nombrePresupuesto.trim().isEmpty() ||
             categoria == null || categoria.trim().isEmpty()) {
             LOGGER.warning("Gestor: Intento de agregar categoría con nombre de presupuesto o categoría null/vacío.");
+            // Considerar también validación para mes y año si es relevante para el gestor.
             throw new IllegalArgumentException("Nombre de presupuesto y categoría no pueden ser vacíos.");
         }
         try {
-            presupuestoDAO.agregarCategoriaAPresupuesto(nombrePresupuesto, categoria, limiteMonto);
-            LOGGER.log(Level.INFO, "Gestor: Solicitud para agregar categoría ''{0}'' a presupuesto ''{1}'' pasada a DAO.", new Object[]{categoria, nombrePresupuesto});
+            presupuestoDAO.agregarCategoriaAPresupuesto(nombrePresupuesto, mes, año, categoria, limiteMonto);
+            LOGGER.log(Level.INFO, "Gestor: Solicitud para agregar categoría ''{0}'' a presupuesto ''{1}'' ({2}/{3}) pasada a DAO.",
+                       new Object[]{categoria, nombrePresupuesto, mes, año});
         } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Gestor: Error SQL al agregar categoría ''" + categoria + "'' a presupuesto ''" + nombrePresupuesto + "''. Propagando excepción.", e);
-            throw e; // Propagar SQLException para que la fachada y la UI puedan manejarla
+            LOGGER.log(Level.SEVERE, "Gestor: Error SQL al agregar categoría ''" + categoria + "'' a presupuesto ''" + nombrePresupuesto + "'' ("+mes+"/"+año+"). Propagando excepción.", e);
+            throw e;
         }
     }
 }
