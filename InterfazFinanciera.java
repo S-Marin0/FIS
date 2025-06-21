@@ -391,9 +391,9 @@ public class InterfazFinanciera extends JFrame {
             if (exito) {
                 txtMontoContribucion.setText("");
                 actualizarTablaMetas();
-                // actualizarComboBoxMetas(); // Se actualiza para reflejar posible cambio de estado de la meta (ej. completada)
+                actualizarComboBoxMetas(); // Actualizar ComboBox ya que la meta pudo haberse completado o su estado cambiado
                 JOptionPane.showMessageDialog(this, "Contribución de " + String.format("$%.2f", montoContribucion) + " a la meta '" + nombreMeta + "' realizada exitosamente.");
-                LOGGER.info("Contribución realizada y UI actualizada.");
+                LOGGER.info("Contribución realizada y UI actualizada, ComboBox de metas actualizado.");
             } else {
                 JOptionPane.showMessageDialog(this, "Error al realizar la contribución a la meta '" + nombreMeta + "'. Verifique los datos o consulte la consola.", "Error de Operación", JOptionPane.ERROR_MESSAGE);
                 LOGGER.warning("Contribución a meta fallida según la fachada.");
