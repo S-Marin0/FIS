@@ -56,7 +56,6 @@ public class InterfazFinanciera extends JFrame {
 
     private JPanel crearPanelTransacciones() {
         LOGGER.fine("Creando panel de Transacciones...");
-        // ... (resto del código del panel sin cambios en logs internos, ya que son de construcción)
         JPanel panel = new JPanel(new BorderLayout());
         JPanel panelEntrada = new JPanel(new GridBagLayout());
         panelEntrada.setBorder(BorderFactory.createTitledBorder("Nueva Transacción"));
@@ -97,7 +96,6 @@ public class InterfazFinanciera extends JFrame {
 
     private JPanel crearPanelMetas() {
         LOGGER.fine("Creando panel de Metas...");
-        // ... (resto del código del panel)
         JPanel panel = new JPanel(new BorderLayout());
         JPanel panelEntrada = new JPanel(new GridBagLayout());
         panelEntrada.setBorder(BorderFactory.createTitledBorder("Nueva Meta"));
@@ -140,7 +138,6 @@ public class InterfazFinanciera extends JFrame {
 
     private JPanel crearPanelPresupuestos() {
         LOGGER.fine("Creando panel de Presupuestos...");
-        // ... (resto del código del panel)
         JPanel panel = new JPanel(new BorderLayout());
         JPanel panelEntrada = new JPanel(new GridBagLayout());
         panelEntrada.setBorder(BorderFactory.createTitledBorder("Gestión de Presupuestos"));
@@ -163,33 +160,34 @@ public class InterfazFinanciera extends JFrame {
         btnCrearPresupuesto.addActionListener(e -> crearPresupuesto());
         gbc.gridx = 6; panelEntrada.add(btnCrearPresupuesto, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 1; panelEntrada.add(new JLabel("Categoría:"), gbc);
+        // Segunda fila - agregar/actualizar especificación
+        gbc.gridx = 0; gbc.gridy = 1; panelEntrada.add(new JLabel("Especificación:"), gbc); // Cambio de etiqueta
         txtCategoriaPresupuesto = new JTextField(10);
         gbc.gridx = 1; panelEntrada.add(txtCategoriaPresupuesto, gbc);
 
-        gbc.gridx = 2; panelEntrada.add(new JLabel("Límite:"), gbc);
+        gbc.gridx = 2; panelEntrada.add(new JLabel("Valor:"), gbc); // Cambio de etiqueta
         txtLimitePresupuesto = new JTextField(10);
         gbc.gridx = 3; panelEntrada.add(txtLimitePresupuesto, gbc);
 
-        JButton btnAgregarCategoria = new JButton("Agregar Categoría");
-        btnAgregarCategoria.addActionListener(e -> agregarCategoriaPresupuesto());
-        gbc.gridx = 4; gbc.gridwidth = 2; panelEntrada.add(btnAgregarCategoria, gbc);
+        JButton btnActualizarPresupuesto = new JButton("Actualizar Presupuesto"); // Cambio de texto del botón
+        btnActualizarPresupuesto.addActionListener(e -> agregarCategoriaPresupuesto());
+        gbc.gridx = 4; gbc.gridwidth = 2; panelEntrada.add(btnActualizarPresupuesto, gbc);
 
-        String[] columnasPresupuestos = {"Presupuesto", "Mes/Año", "Total Presupuestado", "Total Gastado", "Estado"};
+        // Tabla de presupuestos - Columnas actualizadas
+        String[] columnasPresupuestos = {"Presupuesto", "Mes/Año", "Especificación", "Valor Asignado", "Gasto Realizado"};
         modeloTablaPresupuestos = new DefaultTableModel(columnasPresupuestos, 0);
         tablaPresupuestos = new JTable(modeloTablaPresupuestos);
         JScrollPane scrollPresupuestos = new JScrollPane(tablaPresupuestos);
-        scrollPresupuestos.setBorder(BorderFactory.createTitledBorder("Presupuestos"));
+        scrollPresupuestos.setBorder(BorderFactory.createTitledBorder("Detalle de Presupuestos por Especificación"));
 
         panel.add(panelEntrada, BorderLayout.NORTH);
         panel.add(scrollPresupuestos, BorderLayout.CENTER);
-        LOGGER.fine("Panel de Presupuestos creado.");
+        LOGGER.fine("Panel de Presupuestos creado con nuevas etiquetas y columnas.");
         return panel;
     }
 
     private JPanel crearPanelResumen() {
         LOGGER.fine("Creando panel de Resumen...");
-        // ... (resto del código del panel)
         JPanel panel = new JPanel(new BorderLayout());
         JPanel panelEstadisticas = new JPanel(new GridLayout(1, 3, 10, 10));
         panelEstadisticas.setBorder(BorderFactory.createTitledBorder("Resumen Financiero"));
@@ -364,45 +362,44 @@ public class InterfazFinanciera extends JFrame {
         }
     }
 
-    private void agregarCategoriaPresupuesto() {
-        LOGGER.info("Evento: agregarCategoriaPresupuesto iniciado.");
+    private void agregarCategoriaPresupuesto() { //El nombre del método se mantiene, pero su botón asociado cambió
+        LOGGER.info("Evento: agregarCategoriaPresupuesto (Actualizar Presupuesto) iniciado.");
         try {
             String nombrePresupuesto = txtNombrePresupuesto.getText().trim();
-            String categoria = txtCategoriaPresupuesto.getText().trim();
-            String limiteStr = txtLimitePresupuesto.getText().trim();
-            // Obtener mes y año de los spinners
+            String especificacion = txtCategoriaPresupuesto.getText().trim(); // Ahora es especificación
+            String valorStr = txtLimitePresupuesto.getText().trim(); // Ahora es valor
             int mes = (Integer) spnMesPresupuesto.getValue();
             int año = (Integer) spnAñoPresupuesto.getValue();
-            LOGGER.fine("Datos leídos: Presupuesto=''" + nombrePresupuesto + "'' ("+mes+"/"+año+"), Cat=''" + categoria + "'', Limite=''" + limiteStr + "''");
+            LOGGER.fine("Datos leídos: Presupuesto=''" + nombrePresupuesto + "'' ("+mes+"/"+año+"), Especificación=''" + especificacion + "'', Valor=''" + valorStr + "''");
 
-            if (nombrePresupuesto.isEmpty() || categoria.isEmpty() || limiteStr.isEmpty()) {
-                LOGGER.warning("Campos incompletos para agregar categoría a presupuesto.");
-                JOptionPane.showMessageDialog(this, "Por favor ingrese el nombre del presupuesto, mes, año, categoría y límite.", "Campos Incompletos", JOptionPane.WARNING_MESSAGE);
+            if (nombrePresupuesto.isEmpty() || especificacion.isEmpty() || valorStr.isEmpty()) {
+                LOGGER.warning("Campos incompletos para actualizar presupuesto (agregar especificación).");
+                JOptionPane.showMessageDialog(this, "Por favor ingrese Nombre Presupuesto, Mes, Año, Especificación y Valor.", "Campos Incompletos", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
-            double limite = Double.parseDouble(limiteStr);
-            LOGGER.fine("Límite parseado: " + limite);
+            double valor = Double.parseDouble(valorStr);
+            LOGGER.fine("Valor parseado: " + valor);
 
-            LOGGER.info("Llamando a fachada para agregar categoría a presupuesto ("+nombrePresupuesto+", "+mes+", "+año+")...");
-            boolean exito = sistema.agregarCategoriaAPresupuesto(nombrePresupuesto, mes, año, categoria, limite);
-            LOGGER.info("Resultado de fachada para agregar categoría: " + exito);
+            LOGGER.info("Llamando a fachada para agregar/actualizar especificación en presupuesto ("+nombrePresupuesto+", "+mes+", "+año+")...");
+            boolean exito = sistema.agregarCategoriaAPresupuesto(nombrePresupuesto, mes, año, especificacion, valor);
+            LOGGER.info("Resultado de fachada para agregar/actualizar especificación: " + exito);
 
             if (exito) {
-                txtCategoriaPresupuesto.setText("");
-                txtLimitePresupuesto.setText("");
+                txtCategoriaPresupuesto.setText(""); // Limpiar campo de especificación
+                txtLimitePresupuesto.setText("");    // Limpiar campo de valor
                 actualizarTablaPresupuestos();
-                JOptionPane.showMessageDialog(this, "Categoría '" + categoria + "' agregada al presupuesto '" + nombrePresupuesto + "' exitosamente.");
-                LOGGER.info("Categoría agregada y UI actualizada.");
+                JOptionPane.showMessageDialog(this, "Especificación '" + especificacion + "' actualizada/agregada al presupuesto '" + nombrePresupuesto + "' ("+mes+"/"+año+") exitosamente.");
+                LOGGER.info("Especificación agregada/actualizada y UI actualizada.");
             } else {
-                JOptionPane.showMessageDialog(this, "Error al agregar la categoría al presupuesto. Verifique los datos o consulte la consola.", "Error de Operación", JOptionPane.ERROR_MESSAGE);
-                LOGGER.warning("Agregar categoría a presupuesto fallido según la fachada.");
+                JOptionPane.showMessageDialog(this, "Error al actualizar/agregar la especificación al presupuesto. Verifique los datos o consulte la consola.", "Error de Operación", JOptionPane.ERROR_MESSAGE);
+                LOGGER.warning("Actualización de presupuesto (agregar especificación) fallida según la fachada.");
             }
         } catch (NumberFormatException e) {
-            LOGGER.log(Level.WARNING, "Error de formato de número al agregar categoría a presupuesto.", e);
-            JOptionPane.showMessageDialog(this, "El límite debe ser un número válido.", "Error de Formato", JOptionPane.ERROR_MESSAGE);
+            LOGGER.log(Level.WARNING, "Error de formato de número al agregar especificación a presupuesto.", e);
+            JOptionPane.showMessageDialog(this, "El Valor debe ser un número válido.", "Error de Formato", JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error inesperado al agregar categoría a presupuesto.", e);
+            LOGGER.log(Level.SEVERE, "Error inesperado al agregar especificación a presupuesto.", e);
             JOptionPane.showMessageDialog(this, "Ocurrió un error inesperado: " + e.getMessage(), "Error Inesperado", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -474,26 +471,41 @@ public class InterfazFinanciera extends JFrame {
     private void actualizarTablaPresupuestos() {
         LOGGER.fine("Actualizando tabla de presupuestos...");
         try {
-            modeloTablaPresupuestos.setRowCount(0);
+            modeloTablaPresupuestos.setRowCount(0); // Limpiar tabla existente
             LOGGER.finer("Llamando a fachada: obtenerPresupuestos");
             List<Presupuesto> presupuestos = sistema.obtenerPresupuestos();
+
             if (presupuestos != null) {
-                LOGGER.finer("Fachada devolvió " + presupuestos.size() + " presupuestos.");
+                LOGGER.finer("Fachada devolvió " + presupuestos.size() + " presupuestos generales.");
                 for (Presupuesto p : presupuestos) {
-                    String estado = p.getTotalGastado() > p.getTotalPresupuestado() ? "Excedido" : "Normal";
-                    Object[] fila = {
-                        p.getNombre(),
-                        p.getMes() + "/" + p.getAño(),
-                        String.format("$%.2f", p.getTotalPresupuestado()),
-                        String.format("$%.2f", p.getTotalGastado()),
-                        estado
-                    };
-                    modeloTablaPresupuestos.addRow(fila);
+                    LOGGER.finer("Procesando presupuesto: " + p.getNombre() + " (" + p.getMes() + "/" + p.getAño() + ")");
+                    if (p.getLimitesPorCategoria().isEmpty()) {
+                        // Si un presupuesto no tiene especificaciones, podríamos mostrar una fila indicándolo
+                        // o simplemente no mostrar nada para ese presupuesto en esta vista detallada.
+                        // Por ahora, no se muestra nada si no hay especificaciones.
+                        LOGGER.finer("Presupuesto '" + p.getNombre() + "' no tiene especificaciones.");
+                    } else {
+                        for (java.util.Map.Entry<String, Double> entry : p.getLimitesPorCategoria().entrySet()) {
+                            String especificacionNombre = entry.getKey();
+                            Double valorAsignado = entry.getValue();
+                            Double gastoRealizado = p.getGastosPorCategoria().getOrDefault(especificacionNombre, 0.0);
+
+                            Object[] fila = {
+                                p.getNombre(),
+                                p.getMes() + "/" + p.getAño(),
+                                especificacionNombre,
+                                String.format("$%.2f", valorAsignado),
+                                String.format("$%.2f", gastoRealizado)
+                            };
+                            modeloTablaPresupuestos.addRow(fila);
+                            LOGGER.finest("Fila agregada a tabla presupuestos: " + java.util.Arrays.toString(fila));
+                        }
+                    }
                 }
             } else {
                  LOGGER.warning("sistema.obtenerPresupuestos() devolvió null.");
             }
-            LOGGER.fine("Tabla de presupuestos actualizada.");
+            LOGGER.fine("Tabla de presupuestos actualizada con detalle por especificación.");
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error al actualizar la tabla de presupuestos.", e);
             JOptionPane.showMessageDialog(this, "Error al actualizar la tabla de presupuestos: " + e.getMessage(), "Error de Actualización", JOptionPane.ERROR_MESSAGE);
