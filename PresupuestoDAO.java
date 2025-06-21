@@ -204,11 +204,11 @@ public class PresupuestoDAO {
         return presupuesto;
     }
 
-    public void agregarCategoriaAPresupuesto(String nombrePresupuesto, String categoriaNombre, double limite) throws SQLException {
-        LOGGER.log(Level.INFO, "Intentando agregar categoría ''{0}'' con límite {1} al presupuesto ''{2}''", new Object[]{categoriaNombre, limite, nombrePresupuesto});
-        String sqlPresupuesto = "SELECT id FROM presupuestos WHERE nombre = ?"; // Asumimos que el nombre es único por ahora o que se refiere al más reciente.
-                                                                            // Si varios presupuestos pueden tener el mismo nombre en diferentes mes/año, se necesita más info.
-                                                                            // Por simplicidad, la UI usa el nombre.
+    public void agregarCategoriaAPresupuesto(String nombrePresupuesto, int mes, int año, String categoriaNombre, double limite) throws SQLException {
+        LOGGER.log(Level.INFO, "DAO: Intentando agregar categoría ''{0}'' (Límite: {1}) al presupuesto ''{2}'' ({3}/{4})",
+                   new Object[]{categoriaNombre, limite, nombrePresupuesto, mes, año});
+
+        String sqlPresupuesto = "SELECT id FROM presupuestos WHERE nombre = ? AND mes = ? AND año = ?";
         String sqlCategoria = "INSERT INTO categorias_presupuesto (presupuesto_id, categoria, limite_monto, gasto_actual) VALUES (?, ?, ?, 0.0)";
 
         Connection conn = null;
@@ -222,12 +222,15 @@ public class PresupuestoDAO {
 
             stmtPresupuesto = conn.prepareStatement(sqlPresupuesto);
             stmtPresupuesto.setString(1, nombrePresupuesto);
-            LOGGER.fine("Buscando ID para presupuesto: " + nombrePresupuesto);
+            stmtPresupuesto.setInt(2, mes);
+            stmtPresupuesto.setInt(3, año);
+            LOGGER.fine("DAO: Buscando ID para presupuesto: " + nombrePresupuesto + ", Mes: " + mes + ", Año: " + año);
             rs = stmtPresupuesto.executeQuery();
 
             if (rs.next()) {
                 int presupuestoId = rs.getInt("id");
-                LOGGER.log(Level.INFO, "Presupuesto ''{0}'' encontrado con ID: {1}. Agregando categoría ''{2}''.", new Object[]{nombrePresupuesto, presupuestoId, categoriaNombre});
+                LOGGER.log(Level.INFO, "DAO: Presupuesto ''{0}'' ({1}/{2}) encontrado con ID: {3}. Agregando categoría ''{4}''.",
+                           new Object[]{nombrePresupuesto, mes, año, presupuestoId, categoriaNombre});
 
                 stmtCategoria = conn.prepareStatement(sqlCategoria);
                 stmtCategoria.setInt(1, presupuestoId);
@@ -240,13 +243,13 @@ public class PresupuestoDAO {
                     throw new SQLException("No se pudo insertar la categoría.");
                 }
                 conn.commit(); // Confirmar transacción
-                LOGGER.log(Level.INFO, "Categoría ''{0}'' agregada exitosamente al presupuesto ID: {1}", new Object[]{categoriaNombre, presupuestoId});
+                LOGGER.log(Level.INFO, "DAO: Categoría ''{0}'' agregada exitosamente al presupuesto ID: {1}", new Object[]{categoriaNombre, presupuestoId});
             } else {
-                LOGGER.log(Level.WARNING, "No se encontró el presupuesto con nombre: {0}", nombrePresupuesto);
-                throw new SQLException("No se encontró el presupuesto: " + nombrePresupuesto);
+                LOGGER.log(Level.WARNING, "DAO: No se encontró el presupuesto con nombre: {0}, Mes: {1}, Año: {2}", new Object[]{nombrePresupuesto, mes, año});
+                throw new SQLException("No se encontró el presupuesto: " + nombrePresupuesto + " para " + mes + "/" + año);
             }
         } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Error SQL al agregar categoría '" + categoriaNombre + "' a presupuesto '" + nombrePresupuesto + "'.", e);
+            LOGGER.log(Level.SEVERE, "DAO: Error SQL al agregar categoría '" + categoriaNombre + "' a presupuesto '" + nombrePresupuesto + "' ("+mes+"/"+año+").", e);
             if (conn != null) {
                 try {
                     LOGGER.info("Intentando rollback de transacción...");

@@ -370,19 +370,22 @@ public class InterfazFinanciera extends JFrame {
             String nombrePresupuesto = txtNombrePresupuesto.getText().trim();
             String categoria = txtCategoriaPresupuesto.getText().trim();
             String limiteStr = txtLimitePresupuesto.getText().trim();
-            LOGGER.fine("Datos leídos: Presupuesto=''" + nombrePresupuesto + "'', Cat=''" + categoria + "'', Limite=''" + limiteStr + "''");
+            // Obtener mes y año de los spinners
+            int mes = (Integer) spnMesPresupuesto.getValue();
+            int año = (Integer) spnAñoPresupuesto.getValue();
+            LOGGER.fine("Datos leídos: Presupuesto=''" + nombrePresupuesto + "'' ("+mes+"/"+año+"), Cat=''" + categoria + "'', Limite=''" + limiteStr + "''");
 
             if (nombrePresupuesto.isEmpty() || categoria.isEmpty() || limiteStr.isEmpty()) {
                 LOGGER.warning("Campos incompletos para agregar categoría a presupuesto.");
-                JOptionPane.showMessageDialog(this, "Por favor ingrese el nombre del presupuesto, la categoría y el límite.", "Campos Incompletos", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Por favor ingrese el nombre del presupuesto, mes, año, categoría y límite.", "Campos Incompletos", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
             double limite = Double.parseDouble(limiteStr);
             LOGGER.fine("Límite parseado: " + limite);
 
-            LOGGER.info("Llamando a fachada para agregar categoría a presupuesto...");
-            boolean exito = sistema.agregarCategoriaAPresupuesto(nombrePresupuesto, categoria, limite);
+            LOGGER.info("Llamando a fachada para agregar categoría a presupuesto ("+nombrePresupuesto+", "+mes+", "+año+")...");
+            boolean exito = sistema.agregarCategoriaAPresupuesto(nombrePresupuesto, mes, año, categoria, limite);
             LOGGER.info("Resultado de fachada para agregar categoría: " + exito);
 
             if (exito) {
