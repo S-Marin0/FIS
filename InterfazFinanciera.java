@@ -57,12 +57,18 @@ public class InterfazFinanciera extends JFrame {
     private void initComponents() {
         LOGGER.fine("initComponents() - Creando pestañas y componentes principales.");
         tabbedPane = new JTabbedPane();
-        tabbedPane.addTab("Transacciones", crearPanelTransacciones());
-        tabbedPane.addTab("Metas", crearPanelMetas());
+        // Nuevo orden y nombres de pestañas
+        tabbedPane.addTab("Inicio", crearPanelResumen()); // Antes "Resumen", ahora es la primera
+        tabbedPane.addTab("Ingresos/Gastos", crearPanelTransacciones()); // Antes "Transacciones"
         tabbedPane.addTab("Presupuestos", crearPanelPresupuestos());
-        tabbedPane.addTab("Resumen", crearPanelResumen());
+        tabbedPane.addTab("Metas", crearPanelMetas());
+
+        // Asegurar que la primera pestaña (Inicio) esté seleccionada por defecto.
+        // Aunque agregarla primero usualmente lo hace, esto es explícito.
+        tabbedPane.setSelectedIndex(0);
+
         add(tabbedPane, BorderLayout.CENTER);
-        LOGGER.fine("initComponents() - Pestañas agregadas.");
+        LOGGER.fine("initComponents() - Pestañas agregadas, reordenadas y renombradas. Pestaña 'Inicio' seleccionada.");
     }
 
     private JPanel crearPanelTransacciones() {
