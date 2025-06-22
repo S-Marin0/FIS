@@ -128,4 +128,11 @@ public class GestorMetas {
             return false;
         }
     }
+
+    // Método para el resumen mejorado
+    public List<MetaFinanciera> obtenerMetasProximas(java.time.LocalDate fechaReferencia, int diasProximidad) throws SQLException {
+        LOGGER.log(Level.INFO, "Gestor: Solicitando metas próximas a {0} (dentro de {1} días) desde DAO.", new Object[]{fechaReferencia, diasProximidad});
+        // El SQLException se propaga para que la fachada lo maneje
+        return metaDAO.obtenerMetasProximas(fechaReferencia, diasProximidad);
+    }
 }

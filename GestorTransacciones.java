@@ -119,4 +119,21 @@ public class GestorTransacciones {
             return false;
         }
     }
+
+    // Métodos para el resumen mejorado, delegando al DAO
+    public double obtenerTotalIngresosDelMes(int mes, int año) throws SQLException {
+        LOGGER.log(Level.INFO, "Gestor: Solicitando total de ingresos para Mes: {0}, Año: {1} desde DAO.", new Object[]{mes, año});
+        // El SQLException se propaga para que la fachada lo maneje
+        return transaccionDAO.obtenerTotalIngresosDelMes(mes, año);
+    }
+
+    public double obtenerTotalGastosDelMes(int mes, int año) throws SQLException {
+        LOGGER.log(Level.INFO, "Gestor: Solicitando total de gastos para Mes: {0}, Año: {1} desde DAO.", new Object[]{mes, año});
+        return transaccionDAO.obtenerTotalGastosDelMes(mes, año);
+    }
+
+    public Map<String, Double> obtenerGastosPorCategoriaDelMes(int mes, int año) throws SQLException {
+        LOGGER.log(Level.INFO, "Gestor: Solicitando gastos por categoría para Mes: {0}, Año: {1} desde DAO.", new Object[]{mes, año});
+        return transaccionDAO.obtenerGastosPorCategoriaDelMes(mes, año);
+    }
 }

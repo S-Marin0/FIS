@@ -221,4 +221,35 @@ public class MetaDAO {
         }
         return meta;
     }
+
+    public List<MetaFinanciera> obtenerMetasProximas(LocalDate fechaReferencia, int diasProximidad) throws SQLException {
+        LOGGER.log(Level.INFO, "DAO: Intentando obtener metas próximas a {0} (dentro de {1} días).", new Object[]{fechaReferencia, diasProximidad});
+        List<MetaFinanciera> metasProximas = new ArrayList<>();
+        LocalDate fechaLimiteSuperior = fechaReferencia.plusDays(diasProximidad);
+        // Queremos metas no completadas cuya fecha límite esté entre hoy (o fechaReferencia) y la fecha límite superior.
+        String sql = "SELECT id, nombre, monto_objetivo, monto_actual, fecha_limite, descripcion, completada " +
+                     "FROM metas_financieras " +
+                     "WHERE completada = FALSE AND fecha_limite >= ? AND fecha_limite <= ? " +
+                     "ORDER BY fecha_limite ASC";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setDate(1, Date.valueOf(fechaReferencia));
+            stmt.setDate(2, Date.valueOf(fechaLimiteSuperior));
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                int count = 0;
+                while (rs.next()) {
+                    metasProximas.add(mapResultSetToMeta(rs));
+                    count++;
+                }
+                LOGGER.log(Level.INFO, "DAO: Obtenidas {0} metas próximas.", count);
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "DAO: Error SQL al obtener metas próximas.", e);
+            throw e;
+        }
+        return metasProximas;
+    }
 }
