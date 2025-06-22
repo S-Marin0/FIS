@@ -93,16 +93,73 @@ public class InterfazFinanciera extends JFrame {
         btnAgregar.addActionListener(e -> agregarTransaccion());
         gbc.gridx = 1; gbc.gridy = 4; panelEntrada.add(btnAgregar, gbc);
 
-        String[] columnas = {"Fecha", "Tipo", "Descripción", "Monto", "Categoría"};
-        modeloTablaTransacciones = new DefaultTableModel(columnas, 0);
+        // Columnas para el modelo de tabla, incluyendo ID para la lógica de eliminación
+        String[] columnasModelo = {"ID", "Fecha", "Tipo", "Descripción", "Monto", "Categoría"};
+        // Columnas que se mostrarán en la JTable (sin ID)
+        String[] columnasVista = {"Fecha", "Tipo", "Descripción", "Monto", "Categoría"};
+
+        modeloTablaTransacciones = new DefaultTableModel(columnasModelo, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Hacer que ninguna celda sea editable
+            }
+        };
         tablaTransacciones = new JTable(modeloTablaTransacciones);
+
+        // Ocultar la columna ID de la vista de la tabla
+        tablaTransacciones.removeColumn(tablaTransacciones.getColumnModel().getColumn(0));
+
+
         JScrollPane scrollTransacciones = new JScrollPane(tablaTransacciones);
         scrollTransacciones.setBorder(BorderFactory.createTitledBorder("Historial de Transacciones"));
 
+        JButton btnEliminarTransaccion = new JButton("Eliminar Transacción Seleccionada");
+        btnEliminarTransaccion.addActionListener(e -> eliminarTransaccionSeleccionada());
+
+        JPanel panelBotonesTabla = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        panelBotonesTabla.add(btnEliminarTransaccion);
+
         panel.add(panelEntrada, BorderLayout.NORTH);
         panel.add(scrollTransacciones, BorderLayout.CENTER);
-        LOGGER.fine("Panel de Transacciones creado.");
+        panel.add(panelBotonesTabla, BorderLayout.SOUTH);
+        LOGGER.fine("Panel de Transacciones creado con botón de eliminar.");
         return panel;
+    }
+
+    private void eliminarTransaccionSeleccionada() {
+        LOGGER.info("Evento: eliminarTransaccionSeleccionada iniciado.");
+        int filaSeleccionadaVista = tablaTransacciones.getSelectedRow();
+        if (filaSeleccionadaVista == -1) {
+            JOptionPane.showMessageDialog(this, "Por favor, seleccione una transacción de la tabla para eliminar.", "Ninguna Transacción Seleccionada", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Convertir el índice de la fila de la vista al índice del modelo (si la tabla está ordenada o filtrada)
+        int filaSeleccionadaModelo = tablaTransacciones.convertRowIndexToModel(filaSeleccionadaVista);
+
+        // El ID está en la columna 0 del modelo, que está oculta en la vista
+        int idTransaccion = (Integer) modeloTablaTransacciones.getValueAt(filaSeleccionadaModelo, 0);
+        String descTransaccion = (String) modeloTablaTransacciones.getValueAt(filaSeleccionadaModelo, 3); // Columna Descripción en el modelo
+
+        int confirmacion = JOptionPane.showConfirmDialog(this,
+                "¿Está seguro de que desea eliminar la transacción:\n'" + descTransaccion + "' (ID: " + idTransaccion + ")?",
+                "Confirmar Eliminación", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+
+        if (confirmacion == JOptionPane.YES_OPTION) {
+            LOGGER.fine("Usuario confirmó la eliminación de la transacción ID: " + idTransaccion);
+            boolean exito = sistema.eliminarTransaccion(idTransaccion);
+            if (exito) {
+                actualizarTablaTransacciones();
+                actualizarResumen(); // El resumen general y del mes actual pueden cambiar
+                JOptionPane.showMessageDialog(this, "Transacción eliminada exitosamente.", "Eliminación Exitosa", JOptionPane.INFORMATION_MESSAGE);
+                LOGGER.info("Transacción ID " + idTransaccion + " eliminada y UI actualizada.");
+            } else {
+                JOptionPane.showMessageDialog(this, "Error al eliminar la transacción. Verifique la consola.", "Error de Eliminación", JOptionPane.ERROR_MESSAGE);
+                LOGGER.warning("Eliminación de transacción ID " + idTransaccion + " fallida según la fachada.");
+            }
+        } else {
+            LOGGER.fine("Usuario canceló la eliminación de la transacción ID: " + idTransaccion);
+        }
     }
 
     private JPanel crearPanelMetas() {
@@ -153,21 +210,106 @@ public class InterfazFinanciera extends JFrame {
         panelContribucion.add(btnContribuirAMeta);
 
         // Layout general del panel de metas
-        // El panel de entrada para nueva meta y el panel de contribución irán en un panel superior.
         JPanel panelSuperiorMetas = new JPanel(new BorderLayout());
-        panelSuperiorMetas.add(panelEntrada, BorderLayout.NORTH); // Panel para crear nueva meta
-        panelSuperiorMetas.add(panelContribucion, BorderLayout.SOUTH); // Panel para contribuir
+        panelSuperiorMetas.add(panelEntrada, BorderLayout.NORTH);
+        panelSuperiorMetas.add(panelContribucion, BorderLayout.CENTER); // Contribución debajo de creación
 
         String[] columnasMetas = {"Nombre", "Objetivo", "Actual", "Progreso", "Fecha Límite"};
-        modeloTablaMetas = new DefaultTableModel(columnasMetas, 0);
+        modeloTablaMetas = new DefaultTableModel(columnasMetas, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // No editable
+            }
+        };
         tablaMetas = new JTable(modeloTablaMetas);
         JScrollPane scrollMetas = new JScrollPane(tablaMetas);
         scrollMetas.setBorder(BorderFactory.createTitledBorder("Metas Financieras"));
 
-        panel.add(panelSuperiorMetas, BorderLayout.NORTH); // Panel superior con ambos sub-paneles
-        panel.add(scrollMetas, BorderLayout.CENTER); // Tabla de metas abajo
-        LOGGER.fine("Panel de Metas creado con sección de contribución.");
+        JButton btnEliminarMeta = new JButton("Eliminar Meta Seleccionada");
+        btnEliminarMeta.addActionListener(e -> eliminarMetaSeleccionada());
+        JPanel panelBotonEliminarMeta = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        panelBotonEliminarMeta.add(btnEliminarMeta);
+
+        JPanel panelTablaYBotones = new JPanel(new BorderLayout());
+        panelTablaYBotones.add(scrollMetas, BorderLayout.CENTER);
+        panelTablaYBotones.add(panelBotonEliminarMeta, BorderLayout.SOUTH);
+
+        panel.add(panelSuperiorMetas, BorderLayout.NORTH);
+        panel.add(panelTablaYBotones, BorderLayout.CENTER);
+        LOGGER.fine("Panel de Metas creado con sección de contribución y botón de eliminar.");
         return panel;
+    }
+
+    private void eliminarMetaSeleccionada() {
+        LOGGER.info("Evento: eliminarMetaSeleccionada iniciado.");
+        int filaSeleccionada = tablaMetas.getSelectedRow();
+        if (filaSeleccionada == -1) {
+            JOptionPane.showMessageDialog(this, "Por favor, seleccione una meta de la tabla para eliminar.", "Ninguna Meta Seleccionada", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // El nombre de la meta está en la primera columna (índice 0)
+        String nombreMeta = (String) tablaMetas.getValueAt(filaSeleccionada, 0);
+
+        int confirmacion = JOptionPane.showConfirmDialog(this,
+                "¿Está seguro de que desea eliminar la meta: '" + nombreMeta + "'?",
+                "Confirmar Eliminación de Meta", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+
+        if (confirmacion == JOptionPane.YES_OPTION) {
+            LOGGER.fine("Usuario confirmó la eliminación de la meta: " + nombreMeta);
+            boolean exito = sistema.eliminarMeta(nombreMeta);
+            if (exito) {
+                actualizarTablaMetas();
+                actualizarComboBoxMetas(); // Para que desaparezca del combo de contribuciones
+                // También podría ser necesario actualizar el resumen si las metas afectan alguna alerta
+                actualizarResumen();
+                JOptionPane.showMessageDialog(this, "Meta eliminada exitosamente.", "Eliminación Exitosa", JOptionPane.INFORMATION_MESSAGE);
+                LOGGER.info("Meta " + nombreMeta + " eliminada y UI actualizada.");
+            } else {
+                JOptionPane.showMessageDialog(this, "Error al eliminar la meta. Verifique la consola.", "Error de Eliminación", JOptionPane.ERROR_MESSAGE);
+                LOGGER.warning("Eliminación de meta " + nombreMeta + " fallida según la fachada.");
+            }
+        } else {
+            LOGGER.fine("Usuario canceló la eliminación de la meta: " + nombreMeta);
+        }
+    }
+
+    private void eliminarPresupuestoSeleccionado() {
+        LOGGER.info("Evento: eliminarPresupuestoSeleccionado iniciado.");
+        Object itemSeleccionado = cmbPresupuestosExistentes.getSelectedItem();
+        if (itemSeleccionado == null || itemSeleccionado.toString().equals("No hay presupuestos") || itemSeleccionado.toString().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Por favor, seleccione un presupuesto de la lista para eliminar.", "Ningún Presupuesto Seleccionado", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String presupuestoSeleccionadoStr = itemSeleccionado.toString();
+        // Formato: "Nombre (Mes/Año)"
+        String nombrePresupuesto = presupuestoSeleccionadoStr.substring(0, presupuestoSeleccionadoStr.lastIndexOf(" (")).trim();
+        String mesAñoStr = presupuestoSeleccionadoStr.substring(presupuestoSeleccionadoStr.lastIndexOf(" (") + 2, presupuestoSeleccionadoStr.length() - 1);
+        String[] partesMesAño = mesAñoStr.split("/");
+        int mes = Integer.parseInt(partesMesAño[0]);
+        int año = Integer.parseInt(partesMesAño[1]);
+
+        int confirmacion = JOptionPane.showConfirmDialog(this,
+                "¿Está seguro de que desea eliminar el presupuesto completo:\n'" + nombrePresupuesto + "' para " + mes + "/" + año + "?\nEsto eliminará también todas sus especificaciones asociadas.",
+                "Confirmar Eliminación de Presupuesto", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+
+        if (confirmacion == JOptionPane.YES_OPTION) {
+            LOGGER.fine("Usuario confirmó la eliminación del presupuesto: " + nombrePresupuesto + " (" + mes + "/" + año + ")");
+            boolean exito = sistema.eliminarPresupuesto(nombrePresupuesto, mes, año);
+            if (exito) {
+                actualizarComboBoxPresupuestos(); // Quitarlo del ComboBox
+                actualizarTablaPresupuestos();  // Limpiar/actualizar la tabla de detalles
+                actualizarResumen(); // El resumen podría cambiar (alertas de presupuesto)
+                JOptionPane.showMessageDialog(this, "Presupuesto eliminado exitosamente.", "Eliminación Exitosa", JOptionPane.INFORMATION_MESSAGE);
+                LOGGER.info("Presupuesto " + nombrePresupuesto + " (" + mes + "/" + año + ") eliminado y UI actualizada.");
+            } else {
+                JOptionPane.showMessageDialog(this, "Error al eliminar el presupuesto. Verifique la consola.", "Error de Eliminación", JOptionPane.ERROR_MESSAGE);
+                LOGGER.warning("Eliminación de presupuesto " + nombrePresupuesto + " (" + mes + "/" + año + ") fallida según la fachada.");
+            }
+        } else {
+            LOGGER.fine("Usuario canceló la eliminación del presupuesto: " + nombrePresupuesto + " (" + mes + "/" + año + ")");
+        }
     }
 
     private JPanel crearPanelPresupuestos() {
@@ -227,9 +369,21 @@ public class InterfazFinanciera extends JFrame {
         panelEspecificaciones.add(btnAgregarEspecificacion, gbcEspecificaciones);
 
         // Panel superior que contiene creación y especificaciones
+        JPanel panelIntermedio = new JPanel(new BorderLayout(10,0));
+        panelIntermedio.add(panelEspecificaciones, BorderLayout.CENTER);
+
+        JButton btnEliminarPresupuesto = new JButton("Eliminar Presupuesto Seleccionado (del ComboBox)");
+        btnEliminarPresupuesto.addActionListener(e -> eliminarPresupuestoSeleccionado());
+        JPanel panelBotonEliminarPresupuesto = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        panelBotonEliminarPresupuesto.add(btnEliminarPresupuesto);
+        panelIntermedio.add(panelBotonEliminarPresupuesto, BorderLayout.SOUTH);
+
+
         JPanel panelSuperior = new JPanel(new GridLayout(1, 2, 10, 0)); // 1 fila, 2 columnas, con espacio horizontal
         panelSuperior.add(panelCreacion);
-        panelSuperior.add(panelEspecificaciones);
+        // panelSuperior.add(panelEspecificaciones);
+        panelSuperior.add(panelIntermedio);
+
 
         // Tabla de presupuestos (detalle de especificaciones)
         String[] columnasPresupuestos = {"Presupuesto", "Mes/Año", "Especificación", "Valor Asignado", "Gasto Realizado"};
@@ -682,6 +836,7 @@ public class InterfazFinanciera extends JFrame {
                 LOGGER.finer("Fachada devolvió " + transacciones.size() + " transacciones.");
                 for (Transaccion t : transacciones) {
                     Object[] fila = {
+                        t.getId(), // Columna 0 para el ID (oculta en la vista)
                         t.getFecha().toString(),
                         t.getTipo().toString(),
                         t.getDescripcion(),

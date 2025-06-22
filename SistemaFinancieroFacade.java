@@ -267,4 +267,40 @@ public class SistemaFinancieroFacade {
             return Collections.emptyList(); // Devuelve lista vacía en caso de error
         }
     }
+
+    // Métodos de eliminación
+    public boolean eliminarTransaccion(int idTransaccion) {
+        LOGGER.log(Level.INFO, "Fachada: Solicitud para eliminar transacción ID: {0}", idTransaccion);
+        // Asumiendo que GestorTransacciones tiene un método eliminarTransaccion(id) que devuelve boolean
+        boolean exito = gestorTransacciones.eliminarTransaccion(idTransaccion);
+        if (exito) {
+            LOGGER.log(Level.INFO, "Fachada: Transacción ID {0} eliminada exitosamente a través del gestor.", idTransaccion);
+        } else {
+            LOGGER.log(Level.WARNING, "Fachada: Falla al eliminar transacción ID {0} a través del gestor.", idTransaccion);
+        }
+        return exito;
+    }
+
+    public boolean eliminarMeta(String nombreMeta) {
+        LOGGER.log(Level.INFO, "Fachada: Solicitud para eliminar meta: ''{0}''", nombreMeta);
+        // Asumiendo que GestorMetas tiene un método eliminarMeta(nombre) que devuelve boolean
+        boolean exito = gestorMetas.eliminarMeta(nombreMeta);
+        if (exito) {
+            LOGGER.log(Level.INFO, "Fachada: Meta ''{0}'' eliminada exitosamente a través del gestor.", nombreMeta);
+        } else {
+            LOGGER.log(Level.WARNING, "Fachada: Falla al eliminar meta ''{0}'' a través del gestor.", nombreMeta);
+        }
+        return exito;
+    }
+
+    public boolean eliminarPresupuesto(String nombre, int mes, int anio) {
+        LOGGER.log(Level.INFO, "Fachada: Solicitud para eliminar presupuesto: Nombre=''{0}'', Mes={1}, Año={2}", new Object[]{nombre, mes, anio});
+        boolean exito = gestorPresupuestos.eliminarPresupuesto(nombre, mes, anio);
+        if (exito) {
+            LOGGER.log(Level.INFO, "Fachada: Presupuesto ''{0}'' ({1}/{2}) eliminado exitosamente a través del gestor.", new Object[]{nombre, mes, anio});
+        } else {
+            LOGGER.log(Level.WARNING, "Fachada: Falla al eliminar presupuesto ''{0}'' ({1}/{2}) a través del gestor.", new Object[]{nombre, mes, anio});
+        }
+        return exito;
+    }
 }

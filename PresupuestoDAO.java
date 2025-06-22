@@ -312,24 +312,29 @@ public class PresupuestoDAO {
         }
     }
 
-    public void eliminarPresupuesto(String nombrePresupuesto) throws SQLException {
-        // Cuidado: esto eliminará TODOS los presupuestos con ese nombre, sin importar mes/año.
-        // Para ser más específico, se necesitaría mes y año.
-        LOGGER.log(Level.INFO, "Intentando eliminar presupuesto(s) con nombre: {0}", nombrePresupuesto);
-        String sql = "DELETE FROM presupuestos WHERE nombre = ?";
+    public void eliminarPresupuesto(String nombre, int mes, int anio) throws SQLException {
+        LOGGER.log(Level.INFO, "DAO: Intentando eliminar presupuesto: Nombre=''{0}'', Mes={1}, Año={2}", new Object[]{nombre, mes, anio});
+        // Asumimos que la tabla categorias_presupuesto tiene una FK a presupuestos.id con ON DELETE CASCADE
+        // para que al eliminar un presupuesto, sus categorías asociadas también se eliminen.
+        // Si no, se necesitaría eliminar primero las categorías explícitamente.
+        String sql = "DELETE FROM presupuestos WHERE nombre = ? AND mes = ? AND año = ?";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, nombrePresupuesto);
+            stmt.setString(1, nombre);
+            stmt.setInt(2, mes);
+            stmt.setInt(3, anio);
+
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
-                LOGGER.log(Level.INFO, "{0} presupuesto(s) con nombre ''{1}'' eliminados (categorías asociadas eliminadas por ON DELETE CASCADE).", new Object[]{affectedRows, nombrePresupuesto});
+                LOGGER.log(Level.INFO, "DAO: Presupuesto ''{0}'' ({1}/{2}) eliminado. Filas afectadas: {3}. (Categorías asociadas también deberían eliminarse si hay ON DELETE CASCADE)", new Object[]{nombre, mes, anio, affectedRows});
             } else {
-                 LOGGER.log(Level.WARNING, "No se encontró ningún presupuesto con nombre ''{0}'' para eliminar.", nombrePresupuesto);
+                 LOGGER.log(Level.WARNING, "DAO: No se encontró presupuesto ''{0}'' ({1}/{2}) para eliminar.", new Object[]{nombre, mes, anio});
+                 // Considerar lanzar una excepción si se espera que siempre exista para eliminar.
             }
         } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Error SQL al eliminar presupuesto " + nombrePresupuesto, e);
+            LOGGER.log(Level.SEVERE, "DAO: Error SQL al eliminar presupuesto " + nombre + " (" + mes + "/" + anio + ").", e);
             throw e;
         }
     }

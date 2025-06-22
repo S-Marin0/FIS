@@ -95,4 +95,21 @@ public class GestorPresupuestos {
             throw e;
         }
     }
+
+    public boolean eliminarPresupuesto(String nombre, int mes, int anio) {
+        LOGGER.log(Level.INFO, "Gestor: Intentando eliminar presupuesto: Nombre=''{0}'', Mes={1}, Año={2}", new Object[]{nombre, mes, anio});
+        if (nombre == null || nombre.trim().isEmpty()) {
+            LOGGER.warning("Gestor: Intento de eliminar presupuesto con nombre null o vacío.");
+            return false;
+        }
+        // Validaciones para mes y año podrían ir aquí si fuera necesario, pero el DAO ya los usa.
+        try {
+            presupuestoDAO.eliminarPresupuesto(nombre, mes, anio);
+            LOGGER.log(Level.INFO, "Gestor: Solicitud para eliminar presupuesto ''{0}'' ({1}/{2}) pasada a DAO.", new Object[]{nombre, mes, anio});
+            return true;
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Gestor: Error SQL al eliminar presupuesto " + nombre + " (" + mes + "/" + anio + ").", e);
+            return false;
+        }
+    }
 }
