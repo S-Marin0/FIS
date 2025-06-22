@@ -35,20 +35,38 @@ public class InterfazFinanciera extends JFrame {
     private JSpinner spnMesPresupuesto, spnAñoPresupuesto;
     private JTable tablaPresupuestos;
     private DefaultTableModel modeloTablaPresupuestos;
-    private JComboBox<String> cmbPresupuestosExistentes; // Nuevo ComboBox para seleccionar presupuestos
+    private JComboBox<String> cmbPresupuestosExistentes;
 
     // Componentes existentes del resumen
-    private JLabel lblBalance, lblIngresos, lblGastos; // Totales generales
+    private JLabel lblBalance, lblIngresos, lblGastos;
     private GraficoPresupuesto graficoPresupuesto;
 
     // Nuevos componentes para el resumen mejorado
     private JLabel lblIngresosMesActual, lblGastosMesActual;
-    private JPanel panelProgresoPresupuesto; // Para mostrar porcentajes de categorías del presupuesto actual
-    private JTextArea areaAlertas; // Para mostrar metas próximas y alertas de presupuesto
+    private JPanel panelProgresoPresupuesto;
+    private JTextArea areaAlertas;
+
+    // Definiciones de estética
+    private Color colorFondoPrincipal = Color.WHITE;
+    private Color colorPanelContenedor = new Color(245, 245, 245); // Un gris muy claro para contenedores internos
+    private Font fuenteGeneral = new Font("SansSerif", Font.PLAIN, 14);
+    private Font fuenteTitulos = new Font("SansSerif", Font.BOLD, 16);
+    private Font fuentePestañas = new Font("SansSerif", Font.BOLD, 15); // Un poco más grande para pestañas
+    private Insets insetsGenerales = new Insets(8, 8, 8, 8);
 
     public InterfazFinanciera(SistemaFinancieroFacade sistema) {
         LOGGER.info("Inicializando InterfazFinanciera...");
         this.sistema = sistema;
+        // Aplicar UIManager defaults para fuentes si es posible, antes de crear componentes
+        UIManager.put("Label.font", fuenteGeneral);
+        UIManager.put("TextField.font", fuenteGeneral);
+        UIManager.put("Button.font", fuenteGeneral);
+        UIManager.put("ComboBox.font", fuenteGeneral);
+        UIManager.put("Table.font", fuenteGeneral);
+        UIManager.put("TitledBorder.font", fuenteTitulos);
+        UIManager.put("TabbedPane.font", fuentePestañas); // Fuente para las pestañas
+        // UIManager.put("Panel.background", colorFondoPrincipal); // Puede ser demasiado global
+
         initComponents();
         configurarVentana();
         LOGGER.info("InterfazFinanciera inicializada y configurada.");
@@ -71,30 +89,41 @@ public class InterfazFinanciera extends JFrame {
         LOGGER.fine("initComponents() - Pestañas agregadas, reordenadas y renombradas. Pestaña 'Inicio' seleccionada.");
     }
 
-    private JPanel crearPanelTransacciones() {
-        LOGGER.fine("Creando panel de Transacciones...");
-        JPanel panel = new JPanel(new BorderLayout());
+    private JPanel crearPanelTransacciones() { // Renombrado en la pestaña a "Ingresos/Gastos"
+        LOGGER.fine("Creando panel de Ingresos/Gastos...");
+        JPanel panel = new JPanel(new BorderLayout(10,10)); // Añadido espacio entre componentes
+        panel.setBackground(colorFondoPrincipal);
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Margen general
+
         JPanel panelEntrada = new JPanel(new GridBagLayout());
-        panelEntrada.setBorder(BorderFactory.createTitledBorder("Nueva Transacción"));
+        panelEntrada.setBackground(colorPanelContenedor); // Fondo más claro para el panel de entrada
+        panelEntrada.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createTitledBorder("Nueva Transacción"),
+            BorderFactory.createEmptyBorder(5,5,5,5) // Padding interno
+        ));
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = insetsGenerales; // Usar insets definidos
+        gbc.anchor = GridBagConstraints.WEST; // Alinear etiquetas a la izquierda
 
         gbc.gridx = 0; gbc.gridy = 0; panelEntrada.add(new JLabel("Tipo:"), gbc);
         cmbTipoTransaccion = new JComboBox<>(new String[]{"INGRESO", "GASTO"});
-        gbc.gridx = 1; panelEntrada.add(cmbTipoTransaccion, gbc);
+        // cmbTipoTransaccion.setFont(fuenteGeneral); // UIManager debería manejar esto
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; panelEntrada.add(cmbTipoTransaccion, gbc);
 
         gbc.gridx = 0; gbc.gridy = 1; panelEntrada.add(new JLabel("Descripción:"), gbc);
-        txtDescripcion = new JTextField(15);
-        gbc.gridx = 1; panelEntrada.add(txtDescripcion, gbc);
+        txtDescripcion = new JTextField(20); // Un poco más ancho
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; panelEntrada.add(txtDescripcion, gbc);
 
         gbc.gridx = 0; gbc.gridy = 2; panelEntrada.add(new JLabel("Monto:"), gbc);
-        txtMonto = new JTextField(15);
-        gbc.gridx = 1; panelEntrada.add(txtMonto, gbc);
+        txtMonto = new JTextField(20);
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; panelEntrada.add(txtMonto, gbc);
 
         gbc.gridx = 0; gbc.gridy = 3; panelEntrada.add(new JLabel("Categoría:"), gbc);
-        txtCategoria = new JTextField(15);
-        gbc.gridx = 1; panelEntrada.add(txtCategoria, gbc);
+        txtCategoria = new JTextField(20);
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; panelEntrada.add(txtCategoria, gbc);
 
+        gbc.fill = GridBagConstraints.NONE; // Reset fill para el botón
+        gbc.anchor = GridBagConstraints.CENTER; // Centrar botón
         JButton btnAgregar = new JButton("Agregar Transacción");
         btnAgregar.addActionListener(e -> agregarTransaccion());
         gbc.gridx = 1; gbc.gridy = 4; panelEntrada.add(btnAgregar, gbc);
@@ -170,41 +199,56 @@ public class InterfazFinanciera extends JFrame {
 
     private JPanel crearPanelMetas() {
         LOGGER.fine("Creando panel de Metas...");
-        JPanel panel = new JPanel(new BorderLayout());
+        JPanel panel = new JPanel(new BorderLayout(10,10));
+        panel.setBackground(colorFondoPrincipal);
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
         JPanel panelEntrada = new JPanel(new GridBagLayout());
-        panelEntrada.setBorder(BorderFactory.createTitledBorder("Nueva Meta"));
+        panelEntrada.setBackground(colorPanelContenedor);
+        panelEntrada.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createTitledBorder("Nueva Meta"),
+            BorderFactory.createEmptyBorder(5,5,5,5)
+        ));
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5,5,5,5);
+        gbc.insets = insetsGenerales;
+        gbc.anchor = GridBagConstraints.WEST;
 
         gbc.gridx = 0; gbc.gridy = 0; panelEntrada.add(new JLabel("Nombre:"), gbc);
-        txtNombreMeta = new JTextField(15);
-        gbc.gridx = 1; panelEntrada.add(txtNombreMeta, gbc);
+        txtNombreMeta = new JTextField(20);
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; panelEntrada.add(txtNombreMeta, gbc);
 
         gbc.gridx = 0; gbc.gridy = 1; panelEntrada.add(new JLabel("Monto Objetivo:"), gbc);
-        txtMontoMeta = new JTextField(15);
-        gbc.gridx = 1; panelEntrada.add(txtMontoMeta, gbc);
+        txtMontoMeta = new JTextField(20);
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; panelEntrada.add(txtMontoMeta, gbc);
 
         gbc.gridx = 0; gbc.gridy = 2; panelEntrada.add(new JLabel("Fecha Límite:"), gbc);
         spnFechaMeta = new JSpinner(new SpinnerDateModel());
         JSpinner.DateEditor editor = new JSpinner.DateEditor(spnFechaMeta, "dd/MM/yyyy");
         spnFechaMeta.setEditor(editor);
-        gbc.gridx = 1; panelEntrada.add(spnFechaMeta, gbc);
+        // spnFechaMeta.setFont(fuenteGeneral); // UIManager debería
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; panelEntrada.add(spnFechaMeta, gbc);
 
         gbc.gridx = 0; gbc.gridy = 3; panelEntrada.add(new JLabel("Descripción:"), gbc);
-        txtDescripcionMeta = new JTextField(15);
-        gbc.gridx = 1; panelEntrada.add(txtDescripcionMeta, gbc);
+        txtDescripcionMeta = new JTextField(20);
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; panelEntrada.add(txtDescripcionMeta, gbc);
 
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.CENTER;
         JButton btnCrearMeta = new JButton("Crear Meta");
         btnCrearMeta.addActionListener(e -> crearMeta());
         gbc.gridx = 1; gbc.gridy = 4; panelEntrada.add(btnCrearMeta, gbc);
 
         // Panel para contribuir a meta
-        JPanel panelContribucion = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        panelContribucion.setBorder(BorderFactory.createTitledBorder("Contribuir a Meta Existente"));
+        JPanel panelContribucion = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8)); // Añadido espaciado
+        panelContribucion.setBackground(colorPanelContenedor);
+        panelContribucion.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createTitledBorder("Contribuir a Meta Existente"),
+            BorderFactory.createEmptyBorder(5,5,5,5)
+        ));
 
         panelContribucion.add(new JLabel("Seleccionar Meta:"));
         cmbMetasContribucion = new JComboBox<>();
-        // cmbMetasContribucion será poblado por actualizarComboBoxMetas()
+        cmbMetasContribucion.setPreferredSize(new Dimension(150, cmbMetasContribucion.getPreferredSize().height)); // Ancho preferido
         panelContribucion.add(cmbMetasContribucion);
 
         panelContribucion.add(new JLabel("Monto a Contribuir:"));
@@ -320,58 +364,71 @@ public class InterfazFinanciera extends JFrame {
 
     private JPanel crearPanelPresupuestos() {
         LOGGER.fine("Creando panel de Presupuestos...");
-        JPanel panel = new JPanel(new BorderLayout(0, 10)); // Añadido espacio vertical entre componentes
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBackground(colorFondoPrincipal);
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         // Panel para crear un nuevo presupuesto
         JPanel panelCreacion = new JPanel(new GridBagLayout());
-        panelCreacion.setBorder(BorderFactory.createTitledBorder("Crear Nuevo Presupuesto"));
+        panelCreacion.setBackground(colorPanelContenedor);
+        panelCreacion.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createTitledBorder("Crear Nuevo Presupuesto"),
+            BorderFactory.createEmptyBorder(5,5,5,5)
+        ));
         GridBagConstraints gbcCreacion = new GridBagConstraints();
-        gbcCreacion.insets = new Insets(5, 5, 5, 5);
+        gbcCreacion.insets = insetsGenerales;
         gbcCreacion.anchor = GridBagConstraints.WEST;
 
         gbcCreacion.gridx = 0; gbcCreacion.gridy = 0; panelCreacion.add(new JLabel("Nombre Presupuesto:"), gbcCreacion);
-        txtNombrePresupuesto = new JTextField(15);
-        gbcCreacion.gridx = 1; panelCreacion.add(txtNombrePresupuesto, gbcCreacion);
+        txtNombrePresupuesto = new JTextField(20);
+        gbcCreacion.gridx = 1; gbcCreacion.fill = GridBagConstraints.HORIZONTAL; panelCreacion.add(txtNombrePresupuesto, gbcCreacion);
 
         gbcCreacion.gridx = 0; gbcCreacion.gridy = 1; panelCreacion.add(new JLabel("Mes:"), gbcCreacion);
         spnMesPresupuesto = new JSpinner(new SpinnerNumberModel(LocalDate.now().getMonthValue(), 1, 12, 1));
-        gbcCreacion.gridx = 1; panelCreacion.add(spnMesPresupuesto, gbcCreacion);
+        gbcCreacion.gridx = 1; gbcCreacion.fill = GridBagConstraints.HORIZONTAL; panelCreacion.add(spnMesPresupuesto, gbcCreacion);
 
         gbcCreacion.gridx = 0; gbcCreacion.gridy = 2; panelCreacion.add(new JLabel("Año:"), gbcCreacion);
         spnAñoPresupuesto = new JSpinner(new SpinnerNumberModel(LocalDate.now().getYear(), 2020, 2030, 1));
-        gbcCreacion.gridx = 1; panelCreacion.add(spnAñoPresupuesto, gbcCreacion);
+        gbcCreacion.gridx = 1; gbcCreacion.fill = GridBagConstraints.HORIZONTAL; panelCreacion.add(spnAñoPresupuesto, gbcCreacion);
 
+        gbcCreacion.fill = GridBagConstraints.NONE;
+        gbcCreacion.anchor = GridBagConstraints.CENTER;
         JButton btnCrearPresupuesto = new JButton("Crear Presupuesto");
         btnCrearPresupuesto.addActionListener(e -> crearPresupuesto());
-        gbcCreacion.gridx = 1; gbcCreacion.gridy = 3; gbcCreacion.anchor = GridBagConstraints.CENTER;
-        panelCreacion.add(btnCrearPresupuesto, gbcCreacion);
+        gbcCreacion.gridx = 1; gbcCreacion.gridy = 3; panelCreacion.add(btnCrearPresupuesto, gbcCreacion);
 
         // Panel para agregar especificaciones a un presupuesto existente
         JPanel panelEspecificaciones = new JPanel(new GridBagLayout());
-        panelEspecificaciones.setBorder(BorderFactory.createTitledBorder("Agregar Especificación a Presupuesto"));
+        panelEspecificaciones.setBackground(colorPanelContenedor);
+        panelEspecificaciones.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createTitledBorder("Agregar Especificación a Presupuesto"),
+            BorderFactory.createEmptyBorder(5,5,5,5)
+        ));
         GridBagConstraints gbcEspecificaciones = new GridBagConstraints();
-        gbcEspecificaciones.insets = new Insets(5, 5, 5, 5);
+        gbcEspecificaciones.insets = insetsGenerales;
         gbcEspecificaciones.anchor = GridBagConstraints.WEST;
 
         gbcEspecificaciones.gridx = 0; gbcEspecificaciones.gridy = 0; panelEspecificaciones.add(new JLabel("Seleccionar Presupuesto:"), gbcEspecificaciones);
         cmbPresupuestosExistentes = new JComboBox<>();
-        // cmbPresupuestosExistentes será poblado por actualizarComboBoxPresupuestos()
+        cmbPresupuestosExistentes.setPreferredSize(new Dimension(200, cmbPresupuestosExistentes.getPreferredSize().height));
         gbcEspecificaciones.gridx = 1; gbcEspecificaciones.gridy = 0; gbcEspecificaciones.fill = GridBagConstraints.HORIZONTAL;
         panelEspecificaciones.add(cmbPresupuestosExistentes, gbcEspecificaciones);
 
         gbcEspecificaciones.gridx = 0; gbcEspecificaciones.gridy = 1; panelEspecificaciones.add(new JLabel("Especificación:"), gbcEspecificaciones);
-        txtCategoriaPresupuesto = new JTextField(15); // Usamos el mismo nombre de variable pero representa la especificación
+        txtCategoriaPresupuesto = new JTextField(20);
         gbcEspecificaciones.gridx = 1; gbcEspecificaciones.fill = GridBagConstraints.HORIZONTAL;
         panelEspecificaciones.add(txtCategoriaPresupuesto, gbcEspecificaciones);
 
         gbcEspecificaciones.gridx = 0; gbcEspecificaciones.gridy = 2; panelEspecificaciones.add(new JLabel("Valor:"), gbcEspecificaciones);
-        txtLimitePresupuesto = new JTextField(15); // Usamos el mismo nombre de variable pero representa el valor
+        txtLimitePresupuesto = new JTextField(20);
         gbcEspecificaciones.gridx = 1; gbcEspecificaciones.fill = GridBagConstraints.HORIZONTAL;
         panelEspecificaciones.add(txtLimitePresupuesto, gbcEspecificaciones);
 
+        gbcEspecificaciones.fill = GridBagConstraints.NONE;
+        gbcEspecificaciones.anchor = GridBagConstraints.CENTER;
         JButton btnAgregarEspecificacion = new JButton("Agregar Especificación");
         btnAgregarEspecificacion.addActionListener(e -> agregarEspecificacionAPresupuestoSeleccionado());
-        gbcEspecificaciones.gridx = 1; gbcEspecificaciones.gridy = 3; gbcEspecificaciones.anchor = GridBagConstraints.CENTER;
+        gbcEspecificaciones.gridx = 1; gbcEspecificaciones.gridy = 3;
         panelEspecificaciones.add(btnAgregarEspecificacion, gbcEspecificaciones);
 
         // Panel superior que contiene creación y especificaciones
@@ -404,22 +461,23 @@ public class InterfazFinanciera extends JFrame {
         return panel;
     }
 
-    private JPanel crearPanelResumen() {
-        LOGGER.fine("Creando panel de Resumen...");
+    private JPanel crearPanelResumen() { // Renombrado en la pestaña a "Inicio"
+        LOGGER.fine("Creando panel de Inicio...");
         JPanel panelPrincipalResumen = new JPanel(new BorderLayout(10, 10));
+        panelPrincipalResumen.setBackground(colorFondoPrincipal);
+        panelPrincipalResumen.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
 
         // Panel para estadísticas generales y del mes actual
-        JPanel panelEstadisticasSuperiores = new JPanel(new GridLayout(2, 1, 5, 5)); // 2 filas, 1 columna
+        JPanel panelEstadisticasSuperiores = new JPanel(new GridLayout(2, 1, 10, 10)); // Aumentado espaciado vertical
+        panelEstadisticasSuperiores.setOpaque(false); // Para que tome el fondo del panel principal
 
         // Subpanel para Balance General (Ingresos, Gastos, Balance Totales)
         JPanel panelBalanceGeneral = new JPanel(new GridLayout(1, 3, 10, 10));
+        panelBalanceGeneral.setOpaque(false);
         panelBalanceGeneral.setBorder(BorderFactory.createTitledBorder("Balance General Acumulado"));
         lblIngresos = new JLabel("Ingresos Totales: $0.00", SwingConstants.CENTER);
-        // ... (configuración de lblIngresos como antes)
         lblGastos = new JLabel("Gastos Totales: $0.00", SwingConstants.CENTER);
-        // ... (configuración de lblGastos como antes)
         lblBalance = new JLabel("Balance Total: $0.00", SwingConstants.CENTER);
-        // ... (configuración de lblBalance como antes)
         panelBalanceGeneral.add(lblIngresos);
         panelBalanceGeneral.add(lblGastos);
         panelBalanceGeneral.add(lblBalance);
@@ -427,6 +485,7 @@ public class InterfazFinanciera extends JFrame {
 
         // Subpanel para Ingresos vs Gastos del Mes Actual
         JPanel panelMesActual = new JPanel(new GridLayout(1, 2, 10, 10));
+        panelMesActual.setOpaque(false);
         panelMesActual.setBorder(BorderFactory.createTitledBorder("Finanzas del Mes Actual"));
         lblIngresosMesActual = new JLabel("Ingresos Mes: $0.00", SwingConstants.CENTER);
         lblGastosMesActual = new JLabel("Gastos Mes: $0.00", SwingConstants.CENTER);
@@ -438,26 +497,31 @@ public class InterfazFinanciera extends JFrame {
 
         // Panel central con Gráfico y Progreso de Presupuesto
         JPanel panelCentral = new JPanel(new BorderLayout(10,10));
+        panelCentral.setOpaque(false);
 
-        graficoPresupuesto = new GraficoPresupuesto(); // Desglose por categoría (mes actual)
+        graficoPresupuesto = new GraficoPresupuesto();
         graficoPresupuesto.setBorder(BorderFactory.createTitledBorder("Desglose de Gastos por Categoría (Mes Actual)"));
+        // graficoPresupuesto.setBackground(colorPanelContenedor); // El gráfico podría tener su propio fondo
         panelCentral.add(graficoPresupuesto, BorderLayout.CENTER);
 
-        panelProgresoPresupuesto = new JPanel(); // Se poblará en actualizarResumen
+        panelProgresoPresupuesto = new JPanel();
+        panelProgresoPresupuesto.setBackground(colorPanelContenedor);
         panelProgresoPresupuesto.setLayout(new BoxLayout(panelProgresoPresupuesto, BoxLayout.Y_AXIS));
         JScrollPane scrollProgreso = new JScrollPane(panelProgresoPresupuesto);
         scrollProgreso.setBorder(BorderFactory.createTitledBorder("Progreso del Presupuesto Actual (%)"));
-        scrollProgreso.setPreferredSize(new Dimension(300, 150)); // Ajustar tamaño según necesidad
+        scrollProgreso.setPreferredSize(new Dimension(350, 150)); // Un poco más ancho
         panelCentral.add(scrollProgreso, BorderLayout.EAST);
 
         panelPrincipalResumen.add(panelCentral, BorderLayout.CENTER);
 
         // Panel inferior para Alertas y Botón de Actualizar
         JPanel panelInferior = new JPanel(new BorderLayout(10, 10));
-        areaAlertas = new JTextArea(5, 30); // Próximos hitos o alertas
+        panelInferior.setOpaque(false);
+        areaAlertas = new JTextArea(5, 30);
         areaAlertas.setEditable(false);
         areaAlertas.setLineWrap(true);
         areaAlertas.setWrapStyleWord(true);
+        // areaAlertas.setFont(fuenteGeneral.deriveFont(Font.ITALIC)); // Un poco diferente para alertas
         JScrollPane scrollAlertas = new JScrollPane(areaAlertas);
         scrollAlertas.setBorder(BorderFactory.createTitledBorder("Alertas y Próximos Hitos"));
         panelInferior.add(scrollAlertas, BorderLayout.CENTER);
@@ -465,26 +529,26 @@ public class InterfazFinanciera extends JFrame {
         JButton btnActualizar = new JButton("Actualizar Resumen");
         btnActualizar.addActionListener(e -> actualizarResumen());
         JPanel panelBoton = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        panelBoton.setOpaque(false);
         panelBoton.add(btnActualizar);
         panelInferior.add(panelBoton, BorderLayout.SOUTH);
 
         panelPrincipalResumen.add(panelInferior, BorderLayout.SOUTH);
 
-        // Aplicar estilos a los JLabels nuevos si es necesario (similar a los existentes)
-        Font fontBold16 = new Font("SansSerif", Font.BOLD, 16); // Reusar o definir una fuente estándar
+        // Estilos para JLabels con fondo de color (se mantienen)
+        Font fontEstadisticas = fuenteTitulos; // Usar fuenteTitulos para estos también
         Color colorIngresos = new Color(34, 139, 34);
         Color colorGastos = new Color(220, 20, 60);
         Color colorBalance = new Color(70, 130, 180);
 
-        lblIngresos.setOpaque(true); lblIngresos.setBackground(colorIngresos); lblIngresos.setForeground(Color.WHITE); lblIngresos.setFont(fontBold16);
-        lblGastos.setOpaque(true); lblGastos.setBackground(colorGastos); lblGastos.setForeground(Color.WHITE); lblGastos.setFont(fontBold16);
-        lblBalance.setOpaque(true); lblBalance.setBackground(colorBalance); lblBalance.setForeground(Color.WHITE); lblBalance.setFont(fontBold16);
+        lblIngresos.setOpaque(true); lblIngresos.setBackground(colorIngresos); lblIngresos.setForeground(Color.WHITE); lblIngresos.setFont(fontEstadisticas);
+        lblGastos.setOpaque(true); lblGastos.setBackground(colorGastos); lblGastos.setForeground(Color.WHITE); lblGastos.setFont(fontEstadisticas);
+        lblBalance.setOpaque(true); lblBalance.setBackground(colorBalance); lblBalance.setForeground(Color.WHITE); lblBalance.setFont(fontEstadisticas);
 
-        lblIngresosMesActual.setOpaque(true); lblIngresosMesActual.setBackground(colorIngresos); lblIngresosMesActual.setForeground(Color.WHITE); lblIngresosMesActual.setFont(fontBold16);
-        lblGastosMesActual.setOpaque(true); lblGastosMesActual.setBackground(colorGastos); lblGastosMesActual.setForeground(Color.WHITE); lblGastosMesActual.setFont(fontBold16);
+        lblIngresosMesActual.setOpaque(true); lblIngresosMesActual.setBackground(colorIngresos); lblIngresosMesActual.setForeground(Color.WHITE); lblIngresosMesActual.setFont(fontEstadisticas);
+        lblGastosMesActual.setOpaque(true); lblGastosMesActual.setBackground(colorGastos); lblGastosMesActual.setForeground(Color.WHITE); lblGastosMesActual.setFont(fontEstadisticas);
 
-
-        LOGGER.fine("Panel de Resumen mejorado creado.");
+        LOGGER.fine("Panel de Inicio (Resumen) mejorado creado.");
         return panelPrincipalResumen;
     }
 
