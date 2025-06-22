@@ -35,6 +35,7 @@ public class InterfazFinanciera extends JFrame {
     private JSpinner spnMesPresupuesto, spnAñoPresupuesto;
     private JTable tablaPresupuestos;
     private DefaultTableModel modeloTablaPresupuestos;
+    private JComboBox<String> cmbPresupuestosExistentes; // Nuevo ComboBox para seleccionar presupuestos
 
     private JLabel lblBalance, lblIngresos, lblGastos;
     private GraficoPresupuesto graficoPresupuesto;
@@ -165,51 +166,75 @@ public class InterfazFinanciera extends JFrame {
 
     private JPanel crearPanelPresupuestos() {
         LOGGER.fine("Creando panel de Presupuestos...");
-        JPanel panel = new JPanel(new BorderLayout());
-        JPanel panelEntrada = new JPanel(new GridBagLayout());
-        panelEntrada.setBorder(BorderFactory.createTitledBorder("Gestión de Presupuestos"));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5,5,5,5);
+        JPanel panel = new JPanel(new BorderLayout(0, 10)); // Añadido espacio vertical entre componentes
 
-        gbc.gridx = 0; gbc.gridy = 0; panelEntrada.add(new JLabel("Nombre Presupuesto:"), gbc);
-        txtNombrePresupuesto = new JTextField(10);
-        gbc.gridx = 1; panelEntrada.add(txtNombrePresupuesto, gbc);
+        // Panel para crear un nuevo presupuesto
+        JPanel panelCreacion = new JPanel(new GridBagLayout());
+        panelCreacion.setBorder(BorderFactory.createTitledBorder("Crear Nuevo Presupuesto"));
+        GridBagConstraints gbcCreacion = new GridBagConstraints();
+        gbcCreacion.insets = new Insets(5, 5, 5, 5);
+        gbcCreacion.anchor = GridBagConstraints.WEST;
 
-        gbc.gridx = 2; panelEntrada.add(new JLabel("Mes:"), gbc);
+        gbcCreacion.gridx = 0; gbcCreacion.gridy = 0; panelCreacion.add(new JLabel("Nombre Presupuesto:"), gbcCreacion);
+        txtNombrePresupuesto = new JTextField(15);
+        gbcCreacion.gridx = 1; panelCreacion.add(txtNombrePresupuesto, gbcCreacion);
+
+        gbcCreacion.gridx = 0; gbcCreacion.gridy = 1; panelCreacion.add(new JLabel("Mes:"), gbcCreacion);
         spnMesPresupuesto = new JSpinner(new SpinnerNumberModel(LocalDate.now().getMonthValue(), 1, 12, 1));
-        gbc.gridx = 3; panelEntrada.add(spnMesPresupuesto, gbc);
+        gbcCreacion.gridx = 1; panelCreacion.add(spnMesPresupuesto, gbcCreacion);
 
-        gbc.gridx = 4; panelEntrada.add(new JLabel("Año:"), gbc);
+        gbcCreacion.gridx = 0; gbcCreacion.gridy = 2; panelCreacion.add(new JLabel("Año:"), gbcCreacion);
         spnAñoPresupuesto = new JSpinner(new SpinnerNumberModel(LocalDate.now().getYear(), 2020, 2030, 1));
-        gbc.gridx = 5; panelEntrada.add(spnAñoPresupuesto, gbc);
+        gbcCreacion.gridx = 1; panelCreacion.add(spnAñoPresupuesto, gbcCreacion);
 
         JButton btnCrearPresupuesto = new JButton("Crear Presupuesto");
         btnCrearPresupuesto.addActionListener(e -> crearPresupuesto());
-        gbc.gridx = 6; panelEntrada.add(btnCrearPresupuesto, gbc);
+        gbcCreacion.gridx = 1; gbcCreacion.gridy = 3; gbcCreacion.anchor = GridBagConstraints.CENTER;
+        panelCreacion.add(btnCrearPresupuesto, gbcCreacion);
 
-        // Segunda fila - agregar/actualizar especificación
-        gbc.gridx = 0; gbc.gridy = 1; panelEntrada.add(new JLabel("Especificación:"), gbc); // Cambio de etiqueta
-        txtCategoriaPresupuesto = new JTextField(10);
-        gbc.gridx = 1; panelEntrada.add(txtCategoriaPresupuesto, gbc);
+        // Panel para agregar especificaciones a un presupuesto existente
+        JPanel panelEspecificaciones = new JPanel(new GridBagLayout());
+        panelEspecificaciones.setBorder(BorderFactory.createTitledBorder("Agregar Especificación a Presupuesto"));
+        GridBagConstraints gbcEspecificaciones = new GridBagConstraints();
+        gbcEspecificaciones.insets = new Insets(5, 5, 5, 5);
+        gbcEspecificaciones.anchor = GridBagConstraints.WEST;
 
-        gbc.gridx = 2; panelEntrada.add(new JLabel("Valor:"), gbc); // Cambio de etiqueta
-        txtLimitePresupuesto = new JTextField(10);
-        gbc.gridx = 3; panelEntrada.add(txtLimitePresupuesto, gbc);
+        gbcEspecificaciones.gridx = 0; gbcEspecificaciones.gridy = 0; panelEspecificaciones.add(new JLabel("Seleccionar Presupuesto:"), gbcEspecificaciones);
+        cmbPresupuestosExistentes = new JComboBox<>();
+        // cmbPresupuestosExistentes será poblado por actualizarComboBoxPresupuestos()
+        gbcEspecificaciones.gridx = 1; gbcEspecificaciones.gridy = 0; gbcEspecificaciones.fill = GridBagConstraints.HORIZONTAL;
+        panelEspecificaciones.add(cmbPresupuestosExistentes, gbcEspecificaciones);
 
-        JButton btnActualizarPresupuesto = new JButton("Actualizar Presupuesto"); // Cambio de texto del botón
-        btnActualizarPresupuesto.addActionListener(e -> agregarCategoriaPresupuesto());
-        gbc.gridx = 4; gbc.gridwidth = 2; panelEntrada.add(btnActualizarPresupuesto, gbc);
+        gbcEspecificaciones.gridx = 0; gbcEspecificaciones.gridy = 1; panelEspecificaciones.add(new JLabel("Especificación:"), gbcEspecificaciones);
+        txtCategoriaPresupuesto = new JTextField(15); // Usamos el mismo nombre de variable pero representa la especificación
+        gbcEspecificaciones.gridx = 1; gbcEspecificaciones.fill = GridBagConstraints.HORIZONTAL;
+        panelEspecificaciones.add(txtCategoriaPresupuesto, gbcEspecificaciones);
 
-        // Tabla de presupuestos - Columnas actualizadas
+        gbcEspecificaciones.gridx = 0; gbcEspecificaciones.gridy = 2; panelEspecificaciones.add(new JLabel("Valor:"), gbcEspecificaciones);
+        txtLimitePresupuesto = new JTextField(15); // Usamos el mismo nombre de variable pero representa el valor
+        gbcEspecificaciones.gridx = 1; gbcEspecificaciones.fill = GridBagConstraints.HORIZONTAL;
+        panelEspecificaciones.add(txtLimitePresupuesto, gbcEspecificaciones);
+
+        JButton btnAgregarEspecificacion = new JButton("Agregar Especificación");
+        btnAgregarEspecificacion.addActionListener(e -> agregarEspecificacionAPresupuestoSeleccionado());
+        gbcEspecificaciones.gridx = 1; gbcEspecificaciones.gridy = 3; gbcEspecificaciones.anchor = GridBagConstraints.CENTER;
+        panelEspecificaciones.add(btnAgregarEspecificacion, gbcEspecificaciones);
+
+        // Panel superior que contiene creación y especificaciones
+        JPanel panelSuperior = new JPanel(new GridLayout(1, 2, 10, 0)); // 1 fila, 2 columnas, con espacio horizontal
+        panelSuperior.add(panelCreacion);
+        panelSuperior.add(panelEspecificaciones);
+
+        // Tabla de presupuestos (detalle de especificaciones)
         String[] columnasPresupuestos = {"Presupuesto", "Mes/Año", "Especificación", "Valor Asignado", "Gasto Realizado"};
         modeloTablaPresupuestos = new DefaultTableModel(columnasPresupuestos, 0);
         tablaPresupuestos = new JTable(modeloTablaPresupuestos);
         JScrollPane scrollPresupuestos = new JScrollPane(tablaPresupuestos);
         scrollPresupuestos.setBorder(BorderFactory.createTitledBorder("Detalle de Presupuestos por Especificación"));
 
-        panel.add(panelEntrada, BorderLayout.NORTH);
+        panel.add(panelSuperior, BorderLayout.NORTH);
         panel.add(scrollPresupuestos, BorderLayout.CENTER);
-        LOGGER.fine("Panel de Presupuestos creado con nuevas etiquetas y columnas.");
+        LOGGER.fine("Panel de Presupuestos reestructurado.");
         return panel;
     }
 
@@ -261,11 +286,8 @@ public class InterfazFinanciera extends JFrame {
         setSize(900, 700);
         setLocationRelativeTo(null);
         LOGGER.info("Actualizando tablas y resumen iniciales...");
-        actualizarTablas(); // Esto ya llama a actualizarComboBoxMetas()
+        actualizarTablas(); // Esto llama a actualizarComboBoxMetas() y ahora también a actualizarComboBoxPresupuestos()
         actualizarResumen();
-        // No es necesario llamar a actualizarComboBoxMetas() directamente aquí si actualizarTablas() ya lo hace.
-        // Pero si queremos una carga explícita e independiente al inicio:
-        // actualizarComboBoxMetas();
         LOGGER.info("Ventana principal configurada.");
     }
 
@@ -471,11 +493,14 @@ public class InterfazFinanciera extends JFrame {
             LOGGER.info("Resultado de fachada para crear presupuesto: " + exito);
 
             if(exito) {
-                actualizarTablaPresupuestos();
+                txtNombrePresupuesto.setText(""); // Limpiar campo después de la creación
+                // spnMesPresupuesto y spnAñoPresupuesto pueden mantenerse o resetearse según preferencia
+                actualizarComboBoxPresupuestos(); // Actualizar el ComboBox con el nuevo presupuesto
+                actualizarTablaPresupuestos(); // Actualizar la tabla (aunque inicialmente no tendrá especificaciones)
                 JOptionPane.showMessageDialog(this, "Presupuesto '" + nombre + "' creado exitosamente para " + mes + "/" + año + ".");
-                LOGGER.info("Presupuesto creado y UI actualizada.");
+                LOGGER.info("Presupuesto creado y UI actualizada, ComboBox de presupuestos actualizado.");
             } else {
-                 JOptionPane.showMessageDialog(this, "Error al crear el presupuesto. Verifique los datos o consulte la consola.", "Error de Operación", JOptionPane.ERROR_MESSAGE);
+                 JOptionPane.showMessageDialog(this, "Error al crear el presupuesto. Verifique si ya existe uno con el mismo nombre para ese mes/año o consulte la consola.", "Error de Operación", JOptionPane.ERROR_MESSAGE);
                  LOGGER.warning("Creación de presupuesto fallida según la fachada.");
             }
         } catch (Exception e) {
@@ -484,38 +509,54 @@ public class InterfazFinanciera extends JFrame {
         }
     }
 
-    private void agregarCategoriaPresupuesto() { //El nombre del método se mantiene, pero su botón asociado cambió
-        LOGGER.info("Evento: agregarCategoriaPresupuesto (Actualizar Presupuesto) iniciado.");
+    private void agregarEspecificacionAPresupuestoSeleccionado() {
+        LOGGER.info("Evento: agregarEspecificacionAPresupuestoSeleccionado iniciado.");
         try {
-            String nombrePresupuesto = txtNombrePresupuesto.getText().trim();
-            String especificacion = txtCategoriaPresupuesto.getText().trim(); // Ahora es especificación
-            String valorStr = txtLimitePresupuesto.getText().trim(); // Ahora es valor
-            int mes = (Integer) spnMesPresupuesto.getValue();
-            int año = (Integer) spnAñoPresupuesto.getValue();
+            Object itemSeleccionado = cmbPresupuestosExistentes.getSelectedItem();
+            if (itemSeleccionado == null || itemSeleccionado.toString().equals("No hay presupuestos") || itemSeleccionado.toString().isEmpty()) {
+                LOGGER.warning("No se seleccionó un presupuesto válido.");
+                JOptionPane.showMessageDialog(this, "Por favor, seleccione un presupuesto de la lista.", "Presupuesto no Seleccionado", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            // El formato en el ComboBox es "Nombre (Mes/Año)"
+            String presupuestoSeleccionadoStr = itemSeleccionado.toString();
+            String nombrePresupuesto = presupuestoSeleccionadoStr.substring(0, presupuestoSeleccionadoStr.lastIndexOf(" (")).trim();
+            String mesAñoStr = presupuestoSeleccionadoStr.substring(presupuestoSeleccionadoStr.lastIndexOf(" (") + 2, presupuestoSeleccionadoStr.length() - 1);
+            String[] partesMesAño = mesAñoStr.split("/");
+            int mes = Integer.parseInt(partesMesAño[0]);
+            int año = Integer.parseInt(partesMesAño[1]);
+
+            String especificacion = txtCategoriaPresupuesto.getText().trim();
+            String valorStr = txtLimitePresupuesto.getText().trim();
             LOGGER.fine("Datos leídos: Presupuesto=''" + nombrePresupuesto + "'' ("+mes+"/"+año+"), Especificación=''" + especificacion + "'', Valor=''" + valorStr + "''");
 
-            if (nombrePresupuesto.isEmpty() || especificacion.isEmpty() || valorStr.isEmpty()) {
-                LOGGER.warning("Campos incompletos para actualizar presupuesto (agregar especificación).");
-                JOptionPane.showMessageDialog(this, "Por favor ingrese Nombre Presupuesto, Mes, Año, Especificación y Valor.", "Campos Incompletos", JOptionPane.WARNING_MESSAGE);
+            if (especificacion.isEmpty() || valorStr.isEmpty()) {
+                LOGGER.warning("Campos incompletos para agregar especificación.");
+                JOptionPane.showMessageDialog(this, "Por favor ingrese Especificación y Valor.", "Campos Incompletos", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
             double valor = Double.parseDouble(valorStr);
+            if (valor <= 0) {
+                LOGGER.warning("Valor de especificación no positivo: " + valor);
+                JOptionPane.showMessageDialog(this, "El Valor debe ser positivo.", "Valor Inválido", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
             LOGGER.fine("Valor parseado: " + valor);
 
-            LOGGER.info("Llamando a fachada para agregar/actualizar especificación en presupuesto ("+nombrePresupuesto+", "+mes+", "+año+")...");
+            LOGGER.info("Llamando a fachada para agregar especificación en presupuesto ("+nombrePresupuesto+", "+mes+", "+año+")...");
             boolean exito = sistema.agregarCategoriaAPresupuesto(nombrePresupuesto, mes, año, especificacion, valor);
-            LOGGER.info("Resultado de fachada para agregar/actualizar especificación: " + exito);
+            LOGGER.info("Resultado de fachada para agregar especificación: " + exito);
 
             if (exito) {
-                txtCategoriaPresupuesto.setText(""); // Limpiar campo de especificación
-                txtLimitePresupuesto.setText("");    // Limpiar campo de valor
-                actualizarTablaPresupuestos();
-                JOptionPane.showMessageDialog(this, "Especificación '" + especificacion + "' actualizada/agregada al presupuesto '" + nombrePresupuesto + "' ("+mes+"/"+año+") exitosamente.");
-                LOGGER.info("Especificación agregada/actualizada y UI actualizada.");
+                txtCategoriaPresupuesto.setText("");
+                txtLimitePresupuesto.setText("");
+                actualizarTablaPresupuestos(); // Actualizar la tabla para mostrar la nueva especificación
+                JOptionPane.showMessageDialog(this, "Especificación '" + especificacion + "' agregada al presupuesto '" + nombrePresupuesto + "' ("+mes+"/"+año+") exitosamente.");
+                LOGGER.info("Especificación agregada y UI actualizada.");
             } else {
-                JOptionPane.showMessageDialog(this, "Error al actualizar/agregar la especificación al presupuesto. Verifique los datos o consulte la consola.", "Error de Operación", JOptionPane.ERROR_MESSAGE);
-                LOGGER.warning("Actualización de presupuesto (agregar especificación) fallida según la fachada.");
+                JOptionPane.showMessageDialog(this, "Error al agregar la especificación al presupuesto. Verifique los datos o consulte la consola.", "Error de Operación", JOptionPane.ERROR_MESSAGE);
+                LOGGER.warning("Agregar especificación fallida según la fachada.");
             }
         } catch (NumberFormatException e) {
             LOGGER.log(Level.WARNING, "Error de formato de número al agregar especificación a presupuesto.", e);
@@ -531,10 +572,55 @@ public class InterfazFinanciera extends JFrame {
         actualizarTablaTransacciones();
         actualizarTablaMetas();
         actualizarTablaPresupuestos();
-        // Es buena idea actualizar el ComboBox de metas aquí también,
-        // por si una meta se completa y debe desaparecer de la lista de contribución.
         actualizarComboBoxMetas();
-        LOGGER.info("Todas las tablas actualizadas (o intento realizado).");
+        actualizarComboBoxPresupuestos(); // Asegurarse de que el ComboBox de presupuestos también se actualiza
+        LOGGER.info("Todas las tablas y ComboBoxes relevantes actualizados (o intento realizado).");
+    }
+
+    private void actualizarComboBoxPresupuestos() {
+        LOGGER.fine("Actualizando ComboBox de presupuestos existentes...");
+        if (cmbPresupuestosExistentes == null) {
+            LOGGER.warning("cmbPresupuestosExistentes es null, no se puede actualizar.");
+            return;
+        }
+        try {
+            Object selectedItem = cmbPresupuestosExistentes.getSelectedItem(); // Guardar selección actual
+            cmbPresupuestosExistentes.removeAllItems();
+            LOGGER.finer("Llamando a fachada: obtenerPresupuestos");
+            List<Presupuesto> presupuestos = sistema.obtenerPresupuestos(); // Asume que esto devuelve todos los presupuestos base
+
+            if (presupuestos != null && !presupuestos.isEmpty()) {
+                LOGGER.finer("Fachada devolvió " + presupuestos.size() + " presupuestos.");
+                for (Presupuesto p : presupuestos) {
+                    // Crear un String único para cada presupuesto, por ejemplo, "Nombre (Mes/Año)"
+                    String itemPresupuesto = String.format("%s (%d/%d)", p.getNombre(), p.getMes(), p.getAño());
+                    cmbPresupuestosExistentes.addItem(itemPresupuesto);
+                }
+                cmbPresupuestosExistentes.setEnabled(true);
+                if (selectedItem != null && cmbPresupuestosExistentes.getModel().getSize() > 0) {
+                    // Intentar restaurar la selección si todavía existe
+                    for (int i = 0; i < cmbPresupuestosExistentes.getItemCount(); i++) {
+                        if (selectedItem.equals(cmbPresupuestosExistentes.getItemAt(i))) {
+                            cmbPresupuestosExistentes.setSelectedIndex(i);
+                            break;
+                        }
+                    }
+                }
+            } else {
+                LOGGER.info("No hay presupuestos existentes para mostrar en el ComboBox.");
+                cmbPresupuestosExistentes.addItem("No hay presupuestos");
+                cmbPresupuestosExistentes.setEnabled(false);
+            }
+            LOGGER.fine("ComboBox de presupuestos existentes actualizado.");
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error al actualizar ComboBox de presupuestos existentes.", e);
+            JOptionPane.showMessageDialog(this, "Error al cargar lista de presupuestos: " + e.getMessage(), "Error de Carga", JOptionPane.ERROR_MESSAGE);
+            if (cmbPresupuestosExistentes != null) {
+                cmbPresupuestosExistentes.removeAllItems();
+                cmbPresupuestosExistentes.addItem("Error al cargar presupuestos");
+                cmbPresupuestosExistentes.setEnabled(false);
+            }
+        }
     }
 
     private void actualizarTablaTransacciones() {
