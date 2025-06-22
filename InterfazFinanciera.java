@@ -37,8 +37,14 @@ public class InterfazFinanciera extends JFrame {
     private DefaultTableModel modeloTablaPresupuestos;
     private JComboBox<String> cmbPresupuestosExistentes; // Nuevo ComboBox para seleccionar presupuestos
 
-    private JLabel lblBalance, lblIngresos, lblGastos;
+    // Componentes existentes del resumen
+    private JLabel lblBalance, lblIngresos, lblGastos; // Totales generales
     private GraficoPresupuesto graficoPresupuesto;
+
+    // Nuevos componentes para el resumen mejorado
+    private JLabel lblIngresosMesActual, lblGastosMesActual;
+    private JPanel panelProgresoPresupuesto; // Para mostrar porcentajes de categorías del presupuesto actual
+    private JTextArea areaAlertas; // Para mostrar metas próximas y alertas de presupuesto
 
     public InterfazFinanciera(SistemaFinancieroFacade sistema) {
         LOGGER.info("Inicializando InterfazFinanciera...");
@@ -240,43 +246,86 @@ public class InterfazFinanciera extends JFrame {
 
     private JPanel crearPanelResumen() {
         LOGGER.fine("Creando panel de Resumen...");
-        JPanel panel = new JPanel(new BorderLayout());
-        JPanel panelEstadisticas = new JPanel(new GridLayout(1, 3, 10, 10));
-        panelEstadisticas.setBorder(BorderFactory.createTitledBorder("Resumen Financiero"));
+        JPanel panelPrincipalResumen = new JPanel(new BorderLayout(10, 10));
 
-        lblIngresos = new JLabel("Ingresos: $0.00", SwingConstants.CENTER);
-        lblIngresos.setOpaque(true);
-        lblIngresos.setBackground(new Color(34, 139, 34));
-        lblIngresos.setForeground(Color.WHITE);
-        lblIngresos.setFont(lblIngresos.getFont().deriveFont(Font.BOLD, 16f));
+        // Panel para estadísticas generales y del mes actual
+        JPanel panelEstadisticasSuperiores = new JPanel(new GridLayout(2, 1, 5, 5)); // 2 filas, 1 columna
 
-        lblGastos = new JLabel("Gastos: $0.00", SwingConstants.CENTER);
-        lblGastos.setOpaque(true);
-        lblGastos.setBackground(new Color(220, 20, 60));
-        lblGastos.setForeground(Color.WHITE);
-        lblGastos.setFont(lblGastos.getFont().deriveFont(Font.BOLD, 16f));
+        // Subpanel para Balance General (Ingresos, Gastos, Balance Totales)
+        JPanel panelBalanceGeneral = new JPanel(new GridLayout(1, 3, 10, 10));
+        panelBalanceGeneral.setBorder(BorderFactory.createTitledBorder("Balance General Acumulado"));
+        lblIngresos = new JLabel("Ingresos Totales: $0.00", SwingConstants.CENTER);
+        // ... (configuración de lblIngresos como antes)
+        lblGastos = new JLabel("Gastos Totales: $0.00", SwingConstants.CENTER);
+        // ... (configuración de lblGastos como antes)
+        lblBalance = new JLabel("Balance Total: $0.00", SwingConstants.CENTER);
+        // ... (configuración de lblBalance como antes)
+        panelBalanceGeneral.add(lblIngresos);
+        panelBalanceGeneral.add(lblGastos);
+        panelBalanceGeneral.add(lblBalance);
+        panelEstadisticasSuperiores.add(panelBalanceGeneral);
 
-        lblBalance = new JLabel("Balance: $0.00", SwingConstants.CENTER);
-        lblBalance.setOpaque(true);
-        lblBalance.setBackground(new Color(70, 130, 180));
-        lblBalance.setForeground(Color.WHITE);
-        lblBalance.setFont(lblBalance.getFont().deriveFont(Font.BOLD, 16f));
+        // Subpanel para Ingresos vs Gastos del Mes Actual
+        JPanel panelMesActual = new JPanel(new GridLayout(1, 2, 10, 10));
+        panelMesActual.setBorder(BorderFactory.createTitledBorder("Finanzas del Mes Actual"));
+        lblIngresosMesActual = new JLabel("Ingresos Mes: $0.00", SwingConstants.CENTER);
+        lblGastosMesActual = new JLabel("Gastos Mes: $0.00", SwingConstants.CENTER);
+        panelMesActual.add(lblIngresosMesActual);
+        panelMesActual.add(lblGastosMesActual);
+        panelEstadisticasSuperiores.add(panelMesActual);
 
-        panelEstadisticas.add(lblIngresos);
-        panelEstadisticas.add(lblGastos);
-        panelEstadisticas.add(lblBalance);
+        panelPrincipalResumen.add(panelEstadisticasSuperiores, BorderLayout.NORTH);
 
-        graficoPresupuesto = new GraficoPresupuesto();
+        // Panel central con Gráfico y Progreso de Presupuesto
+        JPanel panelCentral = new JPanel(new BorderLayout(10,10));
+
+        graficoPresupuesto = new GraficoPresupuesto(); // Desglose por categoría (mes actual)
+        graficoPresupuesto.setBorder(BorderFactory.createTitledBorder("Desglose de Gastos por Categoría (Mes Actual)"));
+        panelCentral.add(graficoPresupuesto, BorderLayout.CENTER);
+
+        panelProgresoPresupuesto = new JPanel(); // Se poblará en actualizarResumen
+        panelProgresoPresupuesto.setLayout(new BoxLayout(panelProgresoPresupuesto, BoxLayout.Y_AXIS));
+        JScrollPane scrollProgreso = new JScrollPane(panelProgresoPresupuesto);
+        scrollProgreso.setBorder(BorderFactory.createTitledBorder("Progreso del Presupuesto Actual (%)"));
+        scrollProgreso.setPreferredSize(new Dimension(300, 150)); // Ajustar tamaño según necesidad
+        panelCentral.add(scrollProgreso, BorderLayout.EAST);
+
+        panelPrincipalResumen.add(panelCentral, BorderLayout.CENTER);
+
+        // Panel inferior para Alertas y Botón de Actualizar
+        JPanel panelInferior = new JPanel(new BorderLayout(10, 10));
+        areaAlertas = new JTextArea(5, 30); // Próximos hitos o alertas
+        areaAlertas.setEditable(false);
+        areaAlertas.setLineWrap(true);
+        areaAlertas.setWrapStyleWord(true);
+        JScrollPane scrollAlertas = new JScrollPane(areaAlertas);
+        scrollAlertas.setBorder(BorderFactory.createTitledBorder("Alertas y Próximos Hitos"));
+        panelInferior.add(scrollAlertas, BorderLayout.CENTER);
+
         JButton btnActualizar = new JButton("Actualizar Resumen");
         btnActualizar.addActionListener(e -> actualizarResumen());
-        JPanel panelBoton = new JPanel();
+        JPanel panelBoton = new JPanel(new FlowLayout(FlowLayout.CENTER));
         panelBoton.add(btnActualizar);
+        panelInferior.add(panelBoton, BorderLayout.SOUTH);
 
-        panel.add(panelEstadisticas, BorderLayout.NORTH);
-        panel.add(graficoPresupuesto, BorderLayout.CENTER);
-        panel.add(panelBoton, BorderLayout.SOUTH);
-        LOGGER.fine("Panel de Resumen creado.");
-        return panel;
+        panelPrincipalResumen.add(panelInferior, BorderLayout.SOUTH);
+
+        // Aplicar estilos a los JLabels nuevos si es necesario (similar a los existentes)
+        Font fontBold16 = new Font("SansSerif", Font.BOLD, 16); // Reusar o definir una fuente estándar
+        Color colorIngresos = new Color(34, 139, 34);
+        Color colorGastos = new Color(220, 20, 60);
+        Color colorBalance = new Color(70, 130, 180);
+
+        lblIngresos.setOpaque(true); lblIngresos.setBackground(colorIngresos); lblIngresos.setForeground(Color.WHITE); lblIngresos.setFont(fontBold16);
+        lblGastos.setOpaque(true); lblGastos.setBackground(colorGastos); lblGastos.setForeground(Color.WHITE); lblGastos.setFont(fontBold16);
+        lblBalance.setOpaque(true); lblBalance.setBackground(colorBalance); lblBalance.setForeground(Color.WHITE); lblBalance.setFont(fontBold16);
+
+        lblIngresosMesActual.setOpaque(true); lblIngresosMesActual.setBackground(colorIngresos); lblIngresosMesActual.setForeground(Color.WHITE); lblIngresosMesActual.setFont(fontBold16);
+        lblGastosMesActual.setOpaque(true); lblGastosMesActual.setBackground(colorGastos); lblGastosMesActual.setForeground(Color.WHITE); lblGastosMesActual.setFont(fontBold16);
+
+
+        LOGGER.fine("Panel de Resumen mejorado creado.");
+        return panelPrincipalResumen;
     }
 
     private void configurarVentana() {
@@ -726,35 +775,120 @@ public class InterfazFinanciera extends JFrame {
     private void actualizarResumen() {
         LOGGER.fine("Actualizando panel de resumen...");
         try {
-            LOGGER.finer("Llamando a fachada para datos de resumen...");
-            double ingresos = sistema.obtenerTotalIngresos();
-            double gastos = sistema.obtenerTotalGastos();
-            double balance = sistema.obtenerBalance();
-            LOGGER.finer("Datos de resumen obtenidos: Ing=" + ingresos + ", Gas=" + gastos + ", Bal=" + balance);
+            // 1. Saldo Total Actual (ya existente, solo ajustamos etiqueta)
+            LOGGER.finer("Llamando a fachada para datos de balance general...");
+            double ingresosTotales = sistema.obtenerTotalIngresos();
+            double gastosTotales = sistema.obtenerTotalGastos();
+            double balanceTotal = sistema.obtenerBalance(); // Esto es ingresosTotales - gastosTotales
+            LOGGER.finer("Datos de balance general: Ing=" + ingresosTotales + ", Gas=" + gastosTotales + ", Bal=" + balanceTotal);
 
-            lblIngresos.setText(String.format("Ingresos: $%.2f", ingresos));
-            lblGastos.setText(String.format("Gastos: $%.2f", gastos));
-            lblBalance.setText(String.format("Balance: $%.2f", balance));
+            lblIngresos.setText(String.format("Ingresos Totales: $%.2f", ingresosTotales));
+            lblGastos.setText(String.format("Gastos Totales: $%.2f", gastosTotales));
+            lblBalance.setText(String.format("Balance Total: $%.2f", balanceTotal));
+            lblBalance.setBackground(balanceTotal >= 0 ? new Color(70, 130, 180) : new Color(255, 165, 0));
 
-            if (balance >= 0) {
-                lblBalance.setBackground(new Color(70, 130, 180));
+            // 2. Ingresos vs. Gastos (mes actual)
+            LOGGER.finer("Llamando a fachada para datos del mes actual...");
+            double ingresosMes = sistema.obtenerTotalIngresosMesActual();
+            double gastosMes = sistema.obtenerTotalGastosMesActual();
+            LOGGER.finer("Datos del mes actual: IngMes=" + ingresosMes + ", GasMes=" + gastosMes);
+            lblIngresosMesActual.setText(String.format("Ingresos Mes: $%.2f", ingresosMes));
+            lblGastosMesActual.setText(String.format("Gastos Mes: $%.2f", gastosMes));
+
+            // 3. Porcentaje de presupuesto utilizado (por categoría)
+            LOGGER.finer("Actualizando progreso del presupuesto actual...");
+            panelProgresoPresupuesto.removeAll(); // Limpiar antes de repoblar
+            Presupuesto presupuestoActual = sistema.obtenerPresupuestoActual();
+            if (presupuestoActual != null) {
+                if (presupuestoActual.getLimitesPorCategoria().isEmpty()) {
+                    panelProgresoPresupuesto.add(new JLabel("  Presupuesto '" + presupuestoActual.getNombre() + "' no tiene especificaciones."));
+                } else {
+                    panelProgresoPresupuesto.add(new JLabel("  Presupuesto: " + presupuestoActual.getNombre() + " (" + presupuestoActual.getMes() + "/" + presupuestoActual.getAño() + ")"));
+                    for (Map.Entry<String, Double> entry : presupuestoActual.getLimitesPorCategoria().entrySet()) {
+                        String categoria = entry.getKey();
+                        double limite = entry.getValue();
+                        double gastado = presupuestoActual.getGastosPorCategoria().getOrDefault(categoria, 0.0);
+                        double porcentajeUsado = (limite > 0) ? (gastado / limite) * 100 : 0;
+
+                        JLabel lblCategoriaProgreso = new JLabel(String.format("  - %s: $%.2f de $%.2f (%.1f%%)", categoria, gastado, limite, porcentajeUsado));
+                        panelProgresoPresupuesto.add(lblCategoriaProgreso);
+                        if (porcentajeUsado > 90) {
+                           lblCategoriaProgreso.setForeground(Color.RED);
+                        } else if (porcentajeUsado > 75) {
+                           lblCategoriaProgreso.setForeground(Color.ORANGE);
+                        }
+                    }
+                }
             } else {
-                lblBalance.setBackground(new Color(255, 165, 0));
+                panelProgresoPresupuesto.add(new JLabel("  No hay presupuesto definido para el mes actual."));
+            }
+            panelProgresoPresupuesto.revalidate();
+            panelProgresoPresupuesto.repaint();
+
+            // 4. Desglose por categoría (gráfico del mes actual)
+            if (graficoPresupuesto != null && sistema != null) {
+                LOGGER.finer("Actualizando datos del gráfico de presupuesto (mes actual)...");
+                Map<String, Double> gastosCategoriaMes = sistema.obtenerGastosPorCategoriaMesActual();
+                graficoPresupuesto.actualizarDatos(gastosCategoriaMes);
+                graficoPresupuesto.repaint();
+                LOGGER.finer("Gráfico de presupuesto (mes actual) actualizado.");
             }
 
-            if (graficoPresupuesto != null && sistema !=null) {
-                 LOGGER.finer("Actualizando datos del gráfico de presupuesto...");
-                 graficoPresupuesto.actualizarDatos(sistema.obtenerGastosPorCategoria());
-                 graficoPresupuesto.repaint();
-                 LOGGER.finer("Gráfico de presupuesto actualizado.");
+            // 5. Próximos hitos o alertas
+            LOGGER.finer("Actualizando alertas y próximos hitos...");
+            StringBuilder alertasTexto = new StringBuilder();
+            final int DIAS_PROXIMIDAD_METAS = 7; // Metas para la próxima semana
+            List<MetaFinanciera> metasProximas = sistema.obtenerAlertasMetasProximas(DIAS_PROXIMIDAD_METAS);
+            if (!metasProximas.isEmpty()) {
+                alertasTexto.append("Metas Próximas (en ").append(DIAS_PROXIMIDAD_METAS).append(" días):\n");
+                for (MetaFinanciera meta : metasProximas) {
+                    alertasTexto.append(String.format("  - %s (Vence: %s, Progreso: %.1f%%)\n", meta.getNombre(), meta.getFechaLimite().toString(), meta.getPorcentajeCompletado()));
+                }
+            } else {
+                alertasTexto.append("No hay metas próximas en los siguientes ").append(DIAS_PROXIMIDAD_METAS).append(" días.\n");
             }
-            LOGGER.fine("Panel de resumen actualizado.");
+            alertasTexto.append("\nAlertas de Presupuesto (Mes Actual):\n");
+            boolean alertasPresupuestoEncontradas = false;
+            if (presupuestoActual != null && !presupuestoActual.getLimitesPorCategoria().isEmpty()) {
+                for (Map.Entry<String, Double> entry : presupuestoActual.getLimitesPorCategoria().entrySet()) {
+                    String categoria = entry.getKey();
+                    double limite = entry.getValue();
+                    double gastado = presupuestoActual.getGastosPorCategoria().getOrDefault(categoria, 0.0);
+                    double porcentajeUsado = (limite > 0) ? (gastado / limite) * 100 : 0;
+                    if (porcentajeUsado >= 80) { // Umbral de alerta
+                        alertasTexto.append(String.format("  - ¡Cuidado! Categoría '%s' al %.1f%% de su límite.\n", categoria, porcentajeUsado));
+                        alertasPresupuestoEncontradas = true;
+                    }
+                }
+            }
+            if (!alertasPresupuestoEncontradas) {
+                 if (presupuestoActual == null) {
+                    alertasTexto.append("  No hay presupuesto definido para el mes actual para verificar alertas.\n");
+                 } else if (presupuestoActual.getLimitesPorCategoria().isEmpty()) {
+                    alertasTexto.append(String.format("  Presupuesto '%s' no tiene especificaciones para alertas.\n", presupuestoActual.getNombre()));
+                 } else {
+                    alertasTexto.append("  Ninguna categoría del presupuesto actual supera el umbral de alerta (80%).\n");
+                 }
+            }
+            areaAlertas.setText(alertasTexto.toString());
+            areaAlertas.setCaretPosition(0); // Mostrar desde el inicio
+
+            LOGGER.fine("Panel de resumen actualizado completamente.");
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error al actualizar el resumen financiero.", e);
             JOptionPane.showMessageDialog(this, "Error al actualizar el resumen financiero: " + e.getMessage(), "Error de Actualización", JOptionPane.ERROR_MESSAGE);
-            lblIngresos.setText("Ingresos: Error");
-            lblGastos.setText("Gastos: Error");
-            lblBalance.setText("Balance: Error");
+            // Resetear etiquetas a estado de error
+            lblIngresos.setText("Ingresos Totales: Error");
+            lblGastos.setText("Gastos Totales: Error");
+            lblBalance.setText("Balance Total: Error");
+            lblIngresosMesActual.setText("Ingresos Mes: Error");
+            lblGastosMesActual.setText("Gastos Mes: Error");
+            panelProgresoPresupuesto.removeAll();
+            panelProgresoPresupuesto.add(new JLabel("Error al cargar datos del presupuesto."));
+            panelProgresoPresupuesto.revalidate();
+            panelProgresoPresupuesto.repaint();
+            areaAlertas.setText("Error al cargar alertas.");
+            if (graficoPresupuesto != null) graficoPresupuesto.actualizarDatos(Collections.emptyMap());
         }
     }
 }

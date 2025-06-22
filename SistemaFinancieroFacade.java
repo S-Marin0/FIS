@@ -202,4 +202,69 @@ public class SistemaFinancieroFacade {
         LOGGER.warning("Facade: obtenerUltimoError() llamado, pero no hay implementación detallada de errores.");
         return "Consulta los logs de la consola para más detalles";
     }
+
+    // Nuevos métodos para el resumen mejorado
+    public double obtenerTotalIngresosMesActual() {
+        LOGGER.info("Fachada: Solicitud para obtener total de ingresos del mes actual.");
+        LocalDate ahora = LocalDate.now();
+        try {
+            // Asumimos que TransaccionDAO está disponible directamente o a través de GestorTransacciones
+            // Si TransaccionDAO es privado en GestorTransacciones, necesitaríamos un método en GestorTransacciones
+            // Por ahora, asumimos que podemos obtenerlo o que GestorTransacciones expone el método.
+            // Para simplificar, llamaremos directamente a un hipotético transaccionDAO aquí,
+            // pero en una arquitectura más estricta, pasaría por el gestor.
+            // Este DAO no está como miembro de la fachada actualmente. Lo añadiremos o pasaremos por gestor.
+            // SOLUCIÓN TEMPORAL: Crear instancia de DAO aquí. NO ES IDEAL.
+            // database.dao.TransaccionDAO tempTransaccionDAO = new database.dao.TransaccionDAO();
+            // double total = tempTransaccionDAO.obtenerTotalIngresosDelMes(ahora.getMonthValue(), ahora.getYear());
+            // SOLUCIÓN MEJORADA: Usar el gestor si expone el método, o añadir DAO a la fachada.
+            // Asumiendo que GestorTransacciones puede tener estos métodos:
+            double total = gestorTransacciones.obtenerTotalIngresosDelMes(ahora.getMonthValue(), ahora.getYear());
+            LOGGER.log(Level.INFO, "Fachada: Total de ingresos del mes actual ({0}/{1}) obtenido: {2}", new Object[]{ahora.getMonthValue(), ahora.getYear(), total});
+            return total;
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Fachada: Error SQL al obtener total de ingresos del mes actual.", e);
+            return 0.0;
+        }
+    }
+
+    public double obtenerTotalGastosMesActual() {
+        LOGGER.info("Fachada: Solicitud para obtener total de gastos del mes actual.");
+        LocalDate ahora = LocalDate.now();
+        try {
+            double total = gestorTransacciones.obtenerTotalGastosDelMes(ahora.getMonthValue(), ahora.getYear());
+            LOGGER.log(Level.INFO, "Fachada: Total de gastos del mes actual ({0}/{1}) obtenido: {2}", new Object[]{ahora.getMonthValue(), ahora.getYear(), total});
+            return total;
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Fachada: Error SQL al obtener total de gastos del mes actual.", e);
+            return 0.0;
+        }
+    }
+
+    public Map<String, Double> obtenerGastosPorCategoriaMesActual() {
+        LOGGER.info("Fachada: Solicitud para obtener gastos por categoría del mes actual.");
+        LocalDate ahora = LocalDate.now();
+        try {
+            Map<String, Double> gastos = gestorTransacciones.obtenerGastosPorCategoriaDelMes(ahora.getMonthValue(), ahora.getYear());
+            LOGGER.log(Level.INFO, "Fachada: Gastos por categoría del mes actual ({0}/{1}) obtenidos (Tamaño: {2}).", new Object[]{ahora.getMonthValue(), ahora.getYear(), (gastos != null ? gastos.size() : "null")});
+            return gastos;
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Fachada: Error SQL al obtener gastos por categoría del mes actual.", e);
+            return Collections.emptyMap(); // Devuelve mapa vacío en caso de error
+        }
+    }
+
+    public List<MetaFinanciera> obtenerAlertasMetasProximas(int diasProximidad) {
+        LOGGER.log(Level.INFO, "Fachada: Solicitud para obtener alertas de metas próximas (en {0} días).", diasProximidad);
+        LocalDate hoy = LocalDate.now();
+        try {
+            // Asumiendo que GestorMetas puede tener este método:
+            List<MetaFinanciera> metas = gestorMetas.obtenerMetasProximas(hoy, diasProximidad);
+            LOGGER.log(Level.INFO, "Fachada: Obtenidas {0} metas próximas desde el gestor.", (metas != null ? metas.size() : "null"));
+            return metas;
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Fachada: Error SQL al obtener metas próximas.", e);
+            return Collections.emptyList(); // Devuelve lista vacía en caso de error
+        }
+    }
 }

@@ -172,6 +172,77 @@ public class TransaccionDAO {
         return totalGastos;
     }
 
+    public double obtenerTotalIngresosDelMes(int mes, int año) throws SQLException {
+        LOGGER.log(Level.INFO, "DAO: Intentando obtener total de ingresos para Mes: {0}, Año: {1}", new Object[]{mes, año});
+        String sql = "SELECT COALESCE(SUM(monto), 0) as total FROM transacciones WHERE tipo = 'INGRESO' AND strftime('%m', fecha) = ? AND strftime('%Y', fecha) = ?";
+        double totalIngresos = 0.0;
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, String.format("%02d", mes));
+            stmt.setString(2, String.valueOf(año));
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    totalIngresos = rs.getDouble("total");
+                }
+            }
+            LOGGER.log(Level.INFO, "DAO: Total de ingresos para {0}/{1} obtenido: {2}", new Object[]{mes, año, totalIngresos});
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "DAO: Error SQL al obtener total de ingresos para " + mes + "/" + año, e);
+            throw e;
+        }
+        return totalIngresos;
+    }
+
+    public double obtenerTotalGastosDelMes(int mes, int año) throws SQLException {
+        LOGGER.log(Level.INFO, "DAO: Intentando obtener total de gastos para Mes: {0}, Año: {1}", new Object[]{mes, año});
+        String sql = "SELECT COALESCE(SUM(monto), 0) as total FROM transacciones WHERE tipo = 'GASTO' AND strftime('%m', fecha) = ? AND strftime('%Y', fecha) = ?";
+        double totalGastos = 0.0;
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, String.format("%02d", mes));
+            stmt.setString(2, String.valueOf(año));
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    totalGastos = rs.getDouble("total");
+                }
+            }
+            LOGGER.log(Level.INFO, "DAO: Total de gastos para {0}/{1} obtenido: {2}", new Object[]{mes, año, totalGastos});
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "DAO: Error SQL al obtener total de gastos para " + mes + "/" + año, e);
+            throw e;
+        }
+        return totalGastos;
+    }
+
+    public Map<String, Double> obtenerGastosPorCategoriaDelMes(int mes, int año) throws SQLException {
+        LOGGER.log(Level.INFO, "DAO: Intentando obtener gastos por categoría para Mes: {0}, Año: {1}", new Object[]{mes, año});
+        Map<String, Double> gastosPorCategoria = new HashMap<>();
+        String sql = "SELECT categoria, SUM(monto) as total FROM transacciones WHERE tipo = 'GASTO' AND strftime('%m', fecha) = ? AND strftime('%Y', fecha) = ? GROUP BY categoria";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, String.format("%02d", mes));
+            stmt.setString(2, String.valueOf(año));
+            try (ResultSet rs = stmt.executeQuery()) {
+                int count = 0;
+                while (rs.next()) {
+                    String categoria = rs.getString("categoria");
+                    double total = rs.getDouble("total");
+                    gastosPorCategoria.put(categoria, total);
+                    count++;
+                    LOGGER.log(Level.FINEST, "DAO: Gasto por categoría ({0}/{1}): Cat=''{2}'', Total={3}", new Object[]{mes, año, categoria, total});
+                }
+                LOGGER.log(Level.INFO, "DAO: Obtenidos gastos para {0} categorías en {1}/{2}.", new Object[]{count, mes, año});
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "DAO: Error SQL al obtener gastos por categoría para " + mes + "/" + año, e);
+            throw e;
+        }
+        return gastosPorCategoria;
+    }
+
     public void eliminarTransaccion(int id) throws SQLException {
         LOGGER.log(Level.INFO, "DAO: Intentando eliminar transacción con ID: {0}", id);
         String sql = "DELETE FROM transacciones WHERE id = ?";
