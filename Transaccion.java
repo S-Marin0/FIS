@@ -8,6 +8,7 @@ public class Transaccion {
     private String categoria;
     private TipoTransaccion tipo;
     private LocalDate fecha;
+    private int id; // ID de la transacción, asignado por la base de datos
     
     public enum TipoTransaccion {
         INGRESO, GASTO
@@ -19,9 +20,12 @@ public class Transaccion {
         this.categoria = categoria;
         this.tipo = tipo;
         this.fecha = LocalDate.now();
+        // El ID no se asigna en el constructor, se espera que lo asigne el DAO al leer de la BD
     }
     
     // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
     

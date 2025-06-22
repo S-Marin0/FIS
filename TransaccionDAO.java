@@ -58,12 +58,11 @@ public class TransaccionDAO {
                     rs.getString("categoria"),
                     Transaccion.TipoTransaccion.valueOf(rs.getString("tipo"))
                 );
-                // Asumiendo que el modelo Transaccion tiene setId y setFecha
-                // transaccion.setId(rs.getInt("id"));
+                transaccion.setId(rs.getInt("id")); // Establecer el ID de la transacción
                 transaccion.setFecha(rs.getDate("fecha").toLocalDate());
                 transacciones.add(transaccion);
                 count++;
-                LOGGER.log(Level.FINEST, "DAO: Transacción mapeada: ID={0}, Desc=''{1}''", new Object[]{rs.getInt("id"), transaccion.getDescripcion()});
+                LOGGER.log(Level.FINEST, "DAO: Transacción mapeada: ID={0}, Desc=''{1}''", new Object[]{transaccion.getId(), transaccion.getDescripcion()});
             }
             LOGGER.log(Level.INFO, "DAO: Obtenidas {0} transacciones.", count);
         } catch (SQLException e) {
@@ -92,11 +91,11 @@ public class TransaccionDAO {
                         rs.getString("categoria"),
                         Transaccion.TipoTransaccion.valueOf(rs.getString("tipo"))
                     );
-                    // transaccion.setId(rs.getInt("id"));
+                    transaccion.setId(rs.getInt("id")); // Establecer el ID de la transacción
                     transaccion.setFecha(rs.getDate("fecha").toLocalDate());
                     transacciones.add(transaccion);
                     count++;
-                    LOGGER.log(Level.FINEST, "DAO: Transacción (tipo {0}) mapeada: ID={1}", new Object[]{tipo, rs.getInt("id")});
+                    LOGGER.log(Level.FINEST, "DAO: Transacción (tipo {0}) mapeada: ID={1}", new Object[]{tipo, transaccion.getId()});
                 }
                 LOGGER.log(Level.INFO, "DAO: Obtenidas {0} transacciones de tipo {1}.", new Object[]{count, tipo});
             }
