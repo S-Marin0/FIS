@@ -42,16 +42,15 @@ public class Main {
         }
 
         // Inicializar la base de datos
-        try {
-            LOGGER.info("Inicializando base de datos...");
-            DatabaseConnection.initializeDatabase();
-            LOGGER.info("Base de datos inicializada correctamente.");
-        } catch (SQLException e) { // Ser más específico con la excepción
-            LOGGER.log(Level.SEVERE, "Error crítico al inicializar la base de datos. La aplicación podría no funcionar correctamente.", e);
-            // Considerar mostrar un JOptionPane aquí si es un error crítico para el arranque
-            // javax.swing.JOptionPane.showMessageDialog(null, "Error crítico al inicializar la base de datos: " + e.getMessage(), "Error de Base de Datos", javax.swing.JOptionPane.ERROR_MESSAGE);
-            // System.exit(1); // Salir si la BD es esencial
-        }
+        // DatabaseConnection.initializeDatabase() maneja internamente sus SQLExceptions y las loguea.
+        // No es necesario un try-catch para SQLException aquí, lo que causaba el error de compilación.
+        LOGGER.info("Intentando inicializar base de datos...");
+        DatabaseConnection.initializeDatabase();
+        // Si initializeDatabase fallara críticamente y necesitara detener la app,
+        // debería lanzar una RuntimeException o tener un mecanismo para señalar el fallo a Main.
+        // Por ahora, asumimos que loguea el error y la app podría continuar en un estado degradado.
+        LOGGER.info("Llamada a inicialización de base de datos completada.");
+
 
         // Agregar hook para cerrar la conexión de la BD al salir
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
