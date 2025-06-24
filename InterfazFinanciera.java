@@ -586,8 +586,22 @@ public class InterfazFinanciera extends JFrame {
             boolean exitoOperacion;
             if (tipo.equals("INGRESO")) {
                 exitoOperacion = sistema.registrarIngreso(descripcion, monto, categoria);
-            } else {
+            } else { // GASTO
                 exitoOperacion = sistema.registrarGasto(descripcion, monto, categoria);
+                if (exitoOperacion) {
+                    // Si el gasto se registró correctamente, también actualizamos el presupuesto
+                    LOGGER.info("Gasto registrado, intentando actualizar el gasto en presupuesto para categoría: " + categoria + ", Monto: " + monto);
+                    boolean exitoPresupuesto = sistema.registrarGastoEnPresupuesto(categoria, monto);
+                    if (exitoPresupuesto) {
+                        LOGGER.info("Gasto en presupuesto actualizado exitosamente para categoría: " + categoria);
+                    } else {
+                        // No se considera un error fatal para el registro de la transacción en sí,
+                        // pero se loguea. Podría ser que no haya presupuesto o categoría definida.
+                        LOGGER.warning("No se pudo actualizar el gasto en el presupuesto para la categoría: " + categoria + ". Puede que no exista un presupuesto o categoría para el mes actual.");
+                        // Opcionalmente, informar al usuario de esto, pero puede ser mucho detalle.
+                        // JOptionPane.showMessageDialog(this, "Gasto registrado, pero no se pudo actualizar en el presupuesto (categoría o presupuesto de mes actual podría no existir).", "Advertencia Presupuesto", JOptionPane.WARNING_MESSAGE);
+                    }
+                }
             }
             LOGGER.info("Resultado de fachada para registrar " + tipo + ": " + exitoOperacion);
 
@@ -596,6 +610,7 @@ public class InterfazFinanciera extends JFrame {
                 txtMonto.setText("");
                 txtCategoria.setText("");
                 actualizarTablaTransacciones();
+                actualizarTablaPresupuestos(); // Asegurar que la tabla de presupuestos también se actualice
                 actualizarResumen();
                 JOptionPane.showMessageDialog(this, "Transacción registrada exitosamente.");
                 LOGGER.info("Transacción registrada y UI actualizada.");
