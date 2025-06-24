@@ -157,15 +157,14 @@ public class SistemaFinancieroFacade {
 
     public boolean registrarGastoEnPresupuesto(String categoria, double monto) {
         LOGGER.log(Level.INFO, "Facade: Registrar Gasto en Presupuesto - Cat: {0}, Monto: {1}", new Object[]{categoria, monto});
-        // Similar a crearPresupuesto, GestorPresupuestos.registrarGastoEnPresupuesto no devuelve boolean.
-        try {
-            gestorPresupuestos.registrarGastoEnPresupuesto(categoria, monto);
-            LOGGER.info("Facade: Gasto en presupuesto pasado a GestorPresupuestos.");
-            return true;
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Facade: Error inesperado al registrar gasto en presupuesto", e);
-            return false;
+        boolean exito = gestorPresupuestos.registrarGastoEnPresupuesto(categoria, monto);
+        if (exito) {
+            LOGGER.info("Facade: Gasto en presupuesto procesado por GestorPresupuestos con éxito.");
+        } else {
+            LOGGER.warning("Facade: GestorPresupuestos reportó un fallo al registrar gasto en presupuesto.");
+            // El error específico (SQLException o validación) ya fue logueado por el Gestor.
         }
+        return exito;
     }
 
     public boolean agregarCategoriaAPresupuesto(String nombrePresupuesto, int mes, int año, String categoria, double limite) {

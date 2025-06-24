@@ -63,17 +63,19 @@ public class GestorPresupuestos {
         }
     }
 
-    public void registrarGastoEnPresupuesto(String categoria, double monto) {
+    public boolean registrarGastoEnPresupuesto(String categoria, double monto) {
         LOGGER.log(Level.INFO, "Gestor: Intentando registrar gasto de {0} en categoría ''{1}'' en presupuesto actual.", new Object[]{monto, categoria});
         if (categoria == null || categoria.trim().isEmpty()) {
             LOGGER.warning("Gestor: Intento de registrar gasto con categoría null o vacía.");
-            return;
+            return false; // Fallo por validación
         }
         try {
             presupuestoDAO.registrarGastoEnPresupuesto(categoria, monto);
             LOGGER.log(Level.INFO, "Gestor: Registro de gasto para categoría ''{0}'' pasado a DAO.", categoria);
+            return true; // Indicar éxito
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Gestor: Error SQL al registrar gasto en categoría " + categoria, e);
+            return false; // Indicar fallo
         }
     }
 
