@@ -137,3 +137,4 @@ public class GestorTransacciones {
         return transaccionDAO.obtenerGastosPorCategoriaDelMes(mes, año);
     }
 }
+ 
