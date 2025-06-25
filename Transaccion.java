@@ -46,4 +46,4 @@ public class Transaccion {
         return String.format("%s - $%.2f (%s) - %s", 
             descripcion, monto, categoria, fecha.toString());
     }
-}
+} 
