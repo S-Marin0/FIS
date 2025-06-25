@@ -135,4 +135,4 @@ public class DatabaseConnection {
             // Considerar si se debe relanzar o manejar de otra forma crítica
         }
     }
-}
+} 
